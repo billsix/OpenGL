@@ -7,6 +7,8 @@ WIDTHxHEIGHT texture sampled by a fullscreen quad.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from mcnopper import common
@@ -16,10 +18,10 @@ WIDTH, HEIGHT = 640, 480
 MAX_DEPTH: int = 5
 AIR: float = 1.0
 BUBBLE: float = 1.06
-ETA = AIR / BUBBLE
-R0 = ((AIR - BUBBLE) ** 2) / ((AIR + BUBBLE) ** 2)
+ETA: float = AIR / BUBBLE
+R0: float = ((AIR - BUBBLE) ** 2) / ((AIR + BUBBLE) ** 2)
 
-SPHERES = [
+SPHERES: list[tuple[Any, ...]] = [
     # center, radius, emissive, diffuse, specular, shininess, alpha, reflectivity
     (
         (0, -10001, -20),
@@ -82,7 +84,7 @@ SPHERES = [
         0.2,
     ),
 ]
-LIGHTS = [((0, 5, -5), (1, 1, 1))]
+LIGHTS: list[tuple[Any, ...]] = [((0, 5, -5), (1, 1, 1))]
 state: dict = {}
 
 
@@ -95,16 +97,16 @@ def _intersect(
     flags ``inside``); a ray starting outside and pointing away misses.
     """
     m: np.ndarray = np.array(origin) - np.array(center)
-    b = np.dot(m, direction)
-    c = np.dot(m, m) - radius * radius
+    b: float = np.dot(m, direction)
+    c: float = np.dot(m, m) - radius * radius
     if b > 0 and c > 0:
         return None
-    discriminant = b * b - c
+    discriminant: float = b * b - c
     if discriminant < 0:
         return None
-    sqrt_d = np.sqrt(discriminant)
+    sqrt_d: float = np.sqrt(discriminant)
     t0, t1 = -b - sqrt_d, -b + sqrt_d
-    inside = t0 < 0
+    inside: bool = t0 < 0
     if inside:
         return t1, True
     return t0, False
@@ -114,10 +116,10 @@ def _trace(
     origin: np.ndarray, direction: np.ndarray, depth: int = 0
 ) -> np.ndarray:
     near: float = float("inf")
-    near_sphere = None
+    near_sphere: tuple[Any, ...] | None = None
     near_inside: bool = False
     for s in SPHERES:
-        hit = _intersect(
+        hit: tuple[float, bool] | None = _intersect(
             origin=origin, direction=direction, center=s[0], radius=s[1]
         )
         if hit and hit[0] < near:
@@ -127,27 +129,27 @@ def _trace(
         return np.array([0.8, 0.8, 0.8])
     center, radius, emiss, diff, spec, shin, alpha, refl = near_sphere
     hit_pos: np.ndarray = np.array(origin) + direction * near
-    nrm = (hit_pos - np.array(center)) / radius
+    nrm: np.ndarray = (hit_pos - np.array(center)) / radius
     if near_inside:
         nrm = -nrm
     bias: float = 1e-4
-    pos_pos = hit_pos + nrm * bias
-    pos_neg = hit_pos - nrm * bias
+    pos_pos: np.ndarray = hit_pos + nrm * bias
+    pos_neg: np.ndarray = hit_pos - nrm * bias
 
     color: np.ndarray = np.zeros(3)
-    fresnel = R0 + (1 - R0) * (1 - max(0, -np.dot(direction, nrm))) ** 5
+    fresnel: float = R0 + (1 - R0) * (1 - max(0, -np.dot(direction, nrm))) ** 5
 
     refl_color: np.ndarray = np.zeros(3)
     if refl > 0 and depth < MAX_DEPTH:
-        d = direction - 2 * np.dot(direction, nrm) * nrm
+        d: np.ndarray = direction - 2 * np.dot(direction, nrm) * nrm
         d /= np.linalg.norm(d)
         refl_color = _trace(origin=pos_pos, direction=d, depth=depth + 1)
 
     refr_color: np.ndarray = np.zeros(3)
     if alpha < 1.0 and depth < MAX_DEPTH:
-        eta = 1.0 / ETA if near_inside else ETA
-        cos_i = -np.dot(direction, nrm)
-        sin_t2 = eta * eta * (1 - cos_i * cos_i)
+        eta: float = 1.0 / ETA if near_inside else ETA
+        cos_i: float = -np.dot(direction, nrm)
+        sin_t2: float = eta * eta * (1 - cos_i * cos_i)
         if sin_t2 < 1:
             d = eta * direction + (eta * cos_i - np.sqrt(1 - sin_t2)) * nrm
             d /= np.linalg.norm(d)
@@ -159,10 +161,10 @@ def _trace(
     else:
         fresnel = 1.0
 
-    eye_dir = -direction
+    eye_dir: np.ndarray = -direction
     for lp, lc in LIGHTS:
         ld: np.ndarray = np.array(lp) - hit_pos
-        light_distance = np.linalg.norm(ld)
+        light_distance: np.floating[Any] = np.linalg.norm(ld)
         ld /= light_distance
         # Shadow check: only geometry strictly between the hit point and the
         # light occludes it (C: 0 < obstacleT0 <= lightDistance).
@@ -178,15 +180,15 @@ def _trace(
                 break
         if obstacle:
             continue
-        diff_i = max(0, np.dot(nrm, ld))
+        diff_i: float = max(0, np.dot(nrm, ld))
         if diff_i > 0:
             color += diff_i * np.array(diff) * np.array(lc)
-            r_dir = ld - 2 * np.dot(ld, nrm) * nrm
+            r_dir: np.ndarray = ld - 2 * np.dot(ld, nrm) * nrm
             r_dir = -r_dir
             r_dir /= np.linalg.norm(r_dir)
-            edr = max(0, np.dot(eye_dir, r_dir))
+            edr: float = max(0, np.dot(eye_dir, r_dir))
             if edr > 0 and not near_inside:
-                spec_i = edr**shin
+                spec_i: float = edr**shin
                 color += spec_i * np.array(spec) * np.array(lc)
 
     color += np.array(emiss)
@@ -199,25 +201,27 @@ def _trace(
 
 def _render() -> np.ndarray:
     fov: float = 30.0
-    aspect = WIDTH / HEIGHT
-    angle = np.tan(np.radians(fov / 2.0))
+    aspect: float = WIDTH / HEIGHT
+    angle: float = np.tan(np.radians(fov / 2.0))
     pixels: np.ndarray = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
     for y in range(HEIGHT):
         # y=0 = bottom of image so the texture upload aligns with the
         # fullscreen quad's UV.v = 0 at the bottom of the screen.
-        ndc_y = (2 * (y + 0.5) / HEIGHT - 1) * angle
+        ndc_y: float = (2 * (y + 0.5) / HEIGHT - 1) * angle
         for x in range(WIDTH):
-            ndc_x = (2 * (x + 0.5) / WIDTH - 1) * angle * aspect
+            ndc_x: float = (2 * (x + 0.5) / WIDTH - 1) * angle * aspect
             d: np.ndarray = np.array([ndc_x, ndc_y, -1.0])
             d /= np.linalg.norm(d)
-            color = _trace(origin=np.array([0.0, 0.0, 0.0]), direction=d)
+            color: np.ndarray = _trace(
+                origin=np.array([0.0, 0.0, 0.0]), direction=d
+            )
             pixels[y, x] = np.clip(color, a_min=0, a_max=1) * 255
     return pixels
 
 
 def init() -> bool:
-    print("[Example 29] CPU raytracing 640x480; this takes ~30s on first run.")
-    pixels = _render()
+    print("[Example 29] CPU raytracing 640x480; this takes ~30s on first run.")  # noqa: T201
+    pixels: np.ndarray = _render()
 
     prog: int = common.compile_program_files(
         script_file=__file__,

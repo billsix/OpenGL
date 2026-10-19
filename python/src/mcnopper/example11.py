@@ -118,9 +118,9 @@ def update(dt: float) -> bool:
     model: np.ndarray = common.translate(x=0, y=-0.5, z=0) @ common.rotate_x(
         45.0
     )
-    nm = model[:3, :3]
+    nm: np.ndarray = model[:3, :3]
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, state["cubemap"])
 

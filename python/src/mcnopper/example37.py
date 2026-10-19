@@ -12,6 +12,8 @@ seconds. The window then sits showing the result.
 
 from __future__ import annotations
 
+from typing import TypeAlias
+
 import numpy as np
 
 from mcnopper import common
@@ -24,8 +26,10 @@ MAX_STEPS: int = 256
 EPSILON: float = 0.01
 GAMMA: float = 0.001
 
-Vec3 = tuple[float, float, float]
-Material = tuple[Vec3, Vec3, Vec3, float]  # emissive, diffuse, specular, shine
+Vec3: TypeAlias = tuple[float, float, float]
+Material: TypeAlias = tuple[
+    Vec3, Vec3, Vec3, float
+]  # emissive, diffuse, specular, shine
 
 # The C's g_allSpheres: (center, radius).
 SPHERES: list[tuple[Vec3, float]] = [
@@ -216,7 +220,7 @@ def _render() -> np.ndarray:
 
 
 def init() -> bool:
-    print(f"[Example 37] CPU raymarching {WIDTH}x{HEIGHT}; please wait...")
+    print(f"[Example 37] CPU raymarching {WIDTH}x{HEIGHT}; please wait...")  # noqa: T201
     px: np.ndarray = _render()
 
     prog: int = common.compile_program_files(

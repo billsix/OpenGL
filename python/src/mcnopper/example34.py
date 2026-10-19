@@ -85,7 +85,7 @@ def init() -> bool:
     vao: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(prog=prog, vao=vao, vbo=vbo_v, name="a_vertex", size=4)
     common.attach_attrib(prog=prog, vao=vao, vbo=vbo_n, name="a_normal", size=3)
     GL.glUniform1i(common.uniform(prog=prog, name="u_depthPassTexture"), 0)
@@ -163,7 +163,7 @@ def update(dt: float) -> bool:
     light_view: np.ndarray = common.look_at(
         eye=LIGHT_POS, center=[0, 0, 0], up=[0, 1, 0]
     )
-    depth_pass = state["depth_pass_matrix"] @ light_view
+    depth_pass: np.ndarray = state["depth_pass_matrix"] @ light_view
 
     # The depth texture is this FBO's attachment: unbind it before the pass
     # that renders into it (C main.c does the same).
@@ -176,7 +176,7 @@ def update(dt: float) -> bool:
     model_d: np.ndarray = common.rotate_y(ui["angle"]) @ common.scale_m(
         x=1.05, y=1.05, z=1.05
     )
-    mv_d = light_view @ model_d
+    mv_d: np.ndarray = light_view @ model_d
     common.upload_matrix(loc=state["mv_loc_d"], m=mv_d)
     GL.glBindVertexArray(state["vao_d"])
     GL.glDrawArrays(GL.GL_TRIANGLES, 0, state["count"])
@@ -187,14 +187,14 @@ def update(dt: float) -> bool:
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_2D, state["depth_tex"])
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
     view: np.ndarray = common.look_at(
         eye=[0, 0, 3], center=[0, 0, 0], up=[0, 1, 0]
     )
     light: np.ndarray = np.array(LIGHT_POS, dtype=np.float32)
     light /= np.linalg.norm(light)
-    light_view_dir = view[:3, :3] @ light
+    light_view_dir: np.ndarray = view[:3, :3] @ light
     common.upload_matrix(loc=state["view_loc"], m=view)
     common.upload_matrix(loc=state["dpm_loc"], m=depth_pass)
     GL.glUniform3f(state["light_loc"], *light_view_dir)

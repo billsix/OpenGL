@@ -30,43 +30,44 @@ import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Union
+from types import ModuleType
+from typing import Any, TypeAlias, Union
 
 import numpy as np
 
 # Convenience aliases for common 3-vector / 4-vector parameter types.
-Vec3 = Union[Sequence[float], np.ndarray]
-Vec4 = Union[Sequence[float], np.ndarray]
+Vec3: TypeAlias = Union[Sequence[float], np.ndarray]
+Vec4: TypeAlias = Union[Sequence[float], np.ndarray]
 
 # --- PyOpenGL pointer-storage workaround ----------------------------------
 # Recent PyOpenGL silently ignores STORE_POINTERS=False (and prints a notice
 # if you try to set it). Skip the flag entirely; instead patch
 # contextdata.getContext to return a constant id so per-context dictionaries
 # don't pile up references to short-lived ctypes arrays.
-import OpenGL
+import OpenGL  # noqa: E402
 
 OpenGL.ERROR_CHECKING = True
 
-from OpenGL import (
+from OpenGL import (  # noqa: E402
     GL,
     contextdata,
 )
-from OpenGL.constant import Constant
-from OpenGL.GL import shaders
+from OpenGL.constant import Constant  # noqa: E402
+from OpenGL.GL import shaders  # noqa: E402
 
 #: PyOpenGL's GL constants are ``Constant`` instances, not plain ``int``s,
 #: so parameters taking a GL enum accept either (house pattern; mirrors
 #: ``mvpvisualization/_pipeline.py``).
-GLenum = int | Constant
+GLenum: TypeAlias = int | Constant
 
-_orig_get_context = contextdata.getContext
+_orig_get_context: Callable[..., Any] = contextdata.getContext
 contextdata.getContext = lambda context=None: 0  # ty: ignore[invalid-assignment]  # deliberate monkey-patch (see note above)
 
-import glfw
+import glfw  # noqa: E402
 
 HAS_IMGUI: bool = False
-imgui = None  # type: ignore[assignment]
-GlfwRenderer = None  # type: ignore[assignment]
+imgui: ModuleType | None = None  # type: ignore[assignment]
+GlfwRenderer: type[Any] | None = None  # type: ignore[assignment]
 try:
     from imgui_bundle import imgui as _imgui
     from imgui_bundle.python_backends.glfw_backend import (
@@ -77,14 +78,14 @@ try:
     GlfwRenderer = _GlfwRenderer
     HAS_IMGUI = True
 except Exception as _imgui_err:  # noqa: BLE001
-    print(
+    print(  # noqa: T201
         f"[McNopper] imgui_bundle unavailable, panels will be hidden: {_imgui_err}"
     )
 
 
 # --- Path resolution ------------------------------------------------------
 
-_THIS_DIR = Path(__file__).resolve().parent
+_THIS_DIR: Path = Path(__file__).resolve().parent
 
 
 def find_media(filename: str) -> str:
@@ -101,7 +102,7 @@ def find_media(filename: str) -> str:
       6. ``importlib.resources("mcnopper")/media``  (post-pip-install)
     """
     candidates: list[Path] = []
-    env = os.environ.get("MCNOPPER_MEDIA")
+    env: str | None = os.environ.get("MCNOPPER_MEDIA")
     if env:
         candidates.append(Path(env))
     # In-repo dev layout: the C repo's Binaries/ sits above this package
@@ -116,7 +117,7 @@ def find_media(filename: str) -> str:
             candidates.append(repo_binaries)
             break
     try:
-        caller = Path(sys.argv[0]).resolve().parent
+        caller: Path = Path(sys.argv[0]).resolve().parent
         candidates.append(caller / "media")
         candidates.append(caller.parent / "media")
     except Exception:
@@ -125,14 +126,15 @@ def find_media(filename: str) -> str:
     try:
         import importlib.resources as _resources
 
-        pkg_media = _resources.files("mcnopper").joinpath("media")
         # importlib.resources returns a Traversable; coerce to Path for our use.
-        candidates.append(Path(str(pkg_media)))
+        candidates.append(
+            Path(str(_resources.files("mcnopper").joinpath("media")))
+        )
     except Exception:
         pass
 
     for base in candidates:
-        p = base / filename
+        p: Path = base / filename
         if p.exists():
             return str(p)
     raise FileNotFoundError(
@@ -161,7 +163,7 @@ def find_shader(script_file: str, filename: str) -> str:
     # ``exampleNN.py`` or the nested ``exampleNN/exampleNN.py``.
     stem: str = Path(script_file).stem
     if stem.startswith("example"):
-        c_dir_name: str = "Example" + stem[len("example"):]
+        c_dir_name: str = "Example" + stem[len("example") :]
         for ancestor in here.parents:
             c_shader_dir: Path = ancestor / c_dir_name / "shader"
             if c_shader_dir.is_dir():
@@ -176,7 +178,7 @@ def find_shader(script_file: str, filename: str) -> str:
 
 # --- Shader / program helpers --------------------------------------------
 
-_LAYOUT_BINDING = re.compile(
+_LAYOUT_BINDING: re.Pattern[str] = re.compile(
     r"layout\s*\(\s*[^)]*binding\s*=", flags=re.IGNORECASE
 )
 
@@ -184,13 +186,13 @@ _LAYOUT_BINDING = re.compile(
 def _maybe_bump_version(src: str) -> str:
     if not _LAYOUT_BINDING.search(src):
         return src
-    m = re.search(r"#version\s+(\d+)\s*([a-z]*)", src)
+    m: re.Match[str] | None = re.search(r"#version\s+(\d+)\s*([a-z]*)", src)
     if not m:
         return src
     ver: int = int(m.group(1))
     if ver >= 420:
         return src
-    profile = m.group(2) or "core"
+    profile: str = m.group(2) or "core"
     return src[: m.start()] + f"#version 420 {profile}" + src[m.end() :]
 
 
@@ -205,7 +207,7 @@ def compile_program(
     tf_mode: GLenum = GL.GL_INTERLEAVED_ATTRIBS,
 ) -> int:
     """Compile + link a program. Returns the GL program id."""
-    objs = []
+    objs: list[int] = []
     if vert_src is not None:
         objs.append(
             shaders.compileShader(
@@ -247,19 +249,23 @@ def compile_program(
         prog: int = GL.glCreateProgram()
         for o in objs:
             GL.glAttachShader(prog, o)
-        n = len(tf_varyings)
+        n: int = len(tf_varyings)
         # PyOpenGL's wrapper expects POINTER(POINTER(c_char)). A bare
         # `(c_char_p * n)` array carries the right contents but ctypes
         # rejects it as the wrong type; cast through.
-        encoded = [v.encode("utf-8") for v in tf_varyings]
-        arr = (ctypes.c_char_p * n)(*encoded)
-        ptr = ctypes.cast(arr, ctypes.POINTER(ctypes.POINTER(ctypes.c_char)))
-        GL.glTransformFeedbackVaryings(prog, n, ptr, tf_mode)
+        encoded: list[bytes] = [v.encode("utf-8") for v in tf_varyings]
+        arr: ctypes.Array[ctypes.c_char_p] = (ctypes.c_char_p * n)(*encoded)
+        GL.glTransformFeedbackVaryings(
+            prog,
+            n,
+            ctypes.cast(arr, ctypes.POINTER(ctypes.POINTER(ctypes.c_char))),
+            tf_mode,
+        )
         # Keep `arr` alive until the link consumes it.
-        _keepalive_arr = arr
+        _keepalive_arr: ctypes.Array[ctypes.c_char_p] = arr
         GL.glLinkProgram(prog)
         if not GL.glGetProgramiv(prog, GL.GL_LINK_STATUS):
-            log = GL.glGetProgramInfoLog(prog).decode(errors="replace")
+            log: str = GL.glGetProgramInfoLog(prog).decode(errors="replace")
             raise RuntimeError(f"link error: {log}")
         for o in objs:
             GL.glDeleteShader(o)
@@ -273,9 +279,9 @@ def compile_program_files(script_file: str, **kw: Any) -> int:
 
     Usage: compile_program_files(__file__, vert="phong.vert.glsl", frag="phong.frag.glsl")
     """
-    src_kw = {}
+    src_kw: dict[str, str] = {}
     for stage in ("vert", "frag", "tesc", "tese", "geom", "comp"):
-        fn = kw.pop(stage, None)
+        fn: str | None = kw.pop(stage, None)
         if fn is not None:
             with open(find_shader(script_file=script_file, filename=fn)) as f:
                 src_kw[f"{stage}_src"] = f.read()
@@ -311,33 +317,33 @@ class TgaImage:
 
 def load_tga(filename: str) -> TgaImage:
     with open(filename, mode="rb") as f:
-        data = f.read()
-    id_len = data[0]
-    cmap_type = data[1]
-    image_type = data[2]
-    cmap_len = struct.unpack_from("<H", data, offset=5)[0]
-    cmap_size = data[7]
-    width = struct.unpack_from("<H", data, offset=12)[0]
-    height = struct.unpack_from("<H", data, offset=14)[0]
-    bpp = data[16]
-    image_desc = data[17]
+        data: bytes = f.read()
+    id_len: int = data[0]
+    cmap_type: int = data[1]
+    image_type: int = data[2]
+    cmap_len: int = struct.unpack_from("<H", data, offset=5)[0]
+    cmap_size: int = data[7]
+    width: int = struct.unpack_from("<H", data, offset=12)[0]
+    height: int = struct.unpack_from("<H", data, offset=14)[0]
+    bpp: int = data[16]
+    image_desc: int = data[17]  # noqa: F841 (TGA field, parsed not used)
 
-    offset = 18 + id_len + cmap_type * cmap_len * (cmap_size // 8)
-    pixel_size = bpp // 8
+    offset: int = 18 + id_len + cmap_type * cmap_len * (cmap_size // 8)
+    pixel_size: int = bpp // 8
 
-    is_rle = image_type in (10, 11)
-    is_grey = image_type in (3, 11)
+    is_rle: bool = image_type in (10, 11)
+    is_grey: bool = image_type in (3, 11)
 
-    pix_bytes = bytearray()
+    pix_bytes: bytearray | bytes = bytearray()
     if is_rle:
-        target = width * height * pixel_size
-        i = offset
+        target: int = width * height * pixel_size
+        i: int = offset
         while len(pix_bytes) < target:
-            head = data[i]
+            head: int = data[i]
             i += 1
-            count = (head & 0x7F) + 1
+            count: int = (head & 0x7F) + 1
             if head & 0x80:
-                pixel = data[i : i + pixel_size]
+                pixel: bytes = data[i : i + pixel_size]
                 i += pixel_size
                 pix_bytes.extend(pixel * count)
             else:
@@ -356,7 +362,7 @@ def load_tga(filename: str) -> TgaImage:
         arr[:, [0, 2]] = arr[:, [2, 0]]
         pix_bytes = arr.tobytes()
 
-    channels = 1 if is_grey else pixel_size
+    channels: int = 1 if is_grey else pixel_size
     # Match GLUS's `glusImageLoadTga`: upload TGA bytes as-is. The McNopper
     # assets are authored bottom-up (image_descriptor bit 5 = 0), which is
     # the same convention OpenGL uses for `glTexImage2D` data, so no flip
@@ -374,8 +380,8 @@ def upload_tga_2d(
     min_filter: GLenum = GL.GL_LINEAR_MIPMAP_LINEAR,
     mag_filter: GLenum = GL.GL_LINEAR,
 ) -> int:
-    img = load_tga(filename)
-    fmt = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[img.channels]
+    img: TgaImage = load_tga(filename)
+    fmt: GLenum = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[img.channels]
     if internal is None:
         internal = {1: GL.GL_R8, 3: GL.GL_RGB8, 4: GL.GL_RGBA8}[img.channels]
     tex: int = GL.glGenTextures(1)
@@ -410,7 +416,7 @@ def upload_cubemap_tgas(faces: list[str]) -> int:
     tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, tex)
     GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-    targets = [
+    targets: list[Constant] = [
         GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X,
         GL.GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
         GL.GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
@@ -419,9 +425,13 @@ def upload_cubemap_tgas(faces: list[str]) -> int:
         GL.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
     ]
     for tgt, fn in zip(targets, faces):
-        img = load_tga(fn)
-        fmt = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[img.channels]
-        internal = {1: GL.GL_R8, 3: GL.GL_RGB8, 4: GL.GL_RGBA8}[img.channels]
+        img: TgaImage = load_tga(fn)
+        fmt: GLenum = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[img.channels]
+        internal: GLenum = {
+            1: GL.GL_R8,
+            3: GL.GL_RGB8,
+            4: GL.GL_RGBA8,
+        }[img.channels]
         GL.glTexImage2D(
             tgt,
             0,
@@ -458,25 +468,25 @@ def upload_cubemap_tgas(faces: list[str]) -> int:
 def load_hdr(filename: str) -> tuple[int, int, np.ndarray]:
     """Load a Radiance .hdr file. Returns (width, height, float32 RGB array)."""
     with open(filename, mode="rb") as f:
-        data = f.read()
-    nl = data.index(b"\n")
-    sig = data[:nl]
+        data: bytes = f.read()
+    nl: int = data.index(b"\n")
+    sig: bytes = data[:nl]
     assert sig.startswith(b"#?"), "not an HDR file"
-    i = nl + 1
-    fmt = "rgb"
+    i: int = nl + 1
+    fmt: str = "rgb"
     while True:
-        nl2 = data.index(b"\n", i)
-        line = data[i:nl2]
+        nl2: int = data.index(b"\n", i)
+        line: bytes = data[i:nl2]
         i = nl2 + 1
         if not line:
             break
         if line.upper().startswith(b"FORMAT="):
             if b"XYZE" in line.upper():
-                fmt = "xyz"
-    res_nl = data.index(b"\n", i)
-    res = data[i:res_nl].decode()
+                fmt = "xyz"  # noqa: F841 (XYZE detected, RGBE-only port)
+    res_nl: int = data.index(b"\n", i)
+    res: str = data[i:res_nl].decode()
     i = res_nl + 1
-    parts = res.split()
+    parts: list[str] = res.split()
     assert len(parts) == 4
     if parts[0] == "-Y":
         height, width = int(parts[1]), int(parts[3])
@@ -489,17 +499,17 @@ def load_hdr(filename: str) -> tuple[int, int, np.ndarray]:
             break
         a, b, c, d = data[i], data[i + 1], data[i + 2], data[i + 3]
         if a == 2 and b == 2 and (c & 0x80) == 0:
-            scanline_w = (c << 8) | d
+            scanline_w: int = (c << 8) | d
             i += 4
             scan: np.ndarray = np.zeros((4, scanline_w), dtype=np.uint8)
             for ch in range(4):
-                x = 0
+                x: int = 0
                 while x < scanline_w:
-                    run = data[i]
+                    run: int = data[i]
                     i += 1
                     if run > 128:
-                        n = run - 128
-                        v = data[i]
+                        n: int = run - 128
+                        v: int = data[i]
                         i += 1
                         scan[ch, x : x + n] = v
                         x += n
@@ -510,7 +520,7 @@ def load_hdr(filename: str) -> tuple[int, int, np.ndarray]:
                         i += run
                         x += run
             r, g, b_, e = scan
-            mant = e.astype(np.int32) - 128
+            mant: np.ndarray = e.astype(np.int32) - 128
             scale: np.ndarray = np.where(
                 e == 0, 0.0, np.ldexp(1.0, mant - 8)
             ).astype(np.float32)
@@ -525,7 +535,7 @@ def load_hdr(filename: str) -> tuple[int, int, np.ndarray]:
                 if e == 0:
                     pixels[y, x] = 0
                 else:
-                    s = math.ldexp(1.0, e - 128 - 8)
+                    s: float = math.ldexp(1.0, e - 128 - 8)
                     pixels[y, x] = (r * s, g * s, b_ * s)
     # GLUS's glusImageLoadHdr stores the file's FIRST scanline in the LAST row
     # (it starts at y = height - 1 and walks down): the Radiance "-Y +X" file is
@@ -711,10 +721,10 @@ def load_obj(filename: str) -> ObjMesh:
     obj_dir: str = os.path.dirname(filename)
     with open(filename) as f:
         for line in f:
-            parts = line.split()
+            parts: list[str] = line.split()
             if not parts or parts[0].startswith("#"):
                 continue
-            tag = parts[0]
+            tag: str = parts[0]
             if tag == "v":
                 v.append([float(parts[1]), float(parts[2]), float(parts[3])])
             elif tag == "vn":
@@ -722,9 +732,9 @@ def load_obj(filename: str) -> ObjMesh:
             elif tag == "vt":
                 vt.append([float(parts[1]), float(parts[2])])
             elif tag == "f":
-                face = []
+                face: list[tuple[int, int, int]] = []
                 for t in parts[1:]:
-                    bits = t.split("/")
+                    bits: list[str] = t.split("/")
                     pi: int = int(bits[0]) - 1
                     ti: int = (
                         int(bits[1]) - 1 if len(bits) > 1 and bits[1] else -1
@@ -758,12 +768,12 @@ def load_obj(filename: str) -> ObjMesh:
         g.material = materials.get(g.material_name)
 
     out_pos, out_nor, out_uv = [], [], []
-    cache = {}
-    indices = []
+    cache: dict[tuple[int, int, int], int] = {}
+    indices: list[int] = []
     for tri in faces:
         for vi, ti, ni in tri:
-            key = (vi, ti, ni)
-            j = cache.get(key)
+            key: tuple[int, int, int] = (vi, ti, ni)
+            j: int | None = cache.get(key)
             if j is None:
                 j = len(out_pos)
                 cache[key] = j
@@ -777,7 +787,9 @@ def load_obj(filename: str) -> ObjMesh:
             indices.append(j)
 
     pos3: np.ndarray = np.asarray(out_pos, dtype=np.float32)
-    pos4 = np.hstack([pos3, np.ones((len(pos3), 1), dtype=np.float32)])
+    pos4: np.ndarray = np.hstack(
+        [pos3, np.ones((len(pos3), 1), dtype=np.float32)]
+    )
     return ObjMesh(
         positions=pos4,
         normals=np.asarray(out_nor, dtype=np.float32),
@@ -804,7 +816,7 @@ def upload_material_diffuse_textures(
 def draw_obj_group(group: ObjGroup, instances: int = 0) -> None:
     """``glDrawElements`` of one group's triangles from the bound index VBO
     holding ``ObjMesh.indices`` (instanced when ``instances`` > 0)."""
-    offset = ctypes.c_void_p(group.first * 4)
+    offset: ctypes.c_void_p = ctypes.c_void_p(group.first * 4)
     if instances:
         GL.glDrawElementsInstanced(
             GL.GL_TRIANGLES, group.count, GL.GL_UNSIGNED_INT, offset, instances
@@ -843,24 +855,24 @@ def make_sphere(radius: float = 0.5, slices: int = 32) -> Shape:
     where the C shows the Venice courtyard; flipping the front face brought it
     back). Exterior spheres never showed it because their demos do not cull.
     """
-    stacks = slices // 2
+    stacks: int = slices // 2
     verts, nors, uvs = [], [], []
     for i in range(stacks + 1):
-        phi = math.pi * i / stacks
+        phi: float = math.pi * i / stacks
         sp, cp = math.sin(phi), math.cos(phi)
         for j in range(slices + 1):
-            theta = 2.0 * math.pi * j / slices
+            theta: float = 2.0 * math.pi * j / slices
             st, ct = math.sin(theta), math.cos(theta)
             # GLUS: x = sin(lat) * sin(ang), z = sin(lat) * cos(ang)
             x, y, z = sp * st, cp, sp * ct
             verts.append([radius * x, radius * y, radius * z, 1.0])
             nors.append([x, y, z])
             uvs.append([j / slices, 1.0 - i / stacks])
-    idx = []
+    idx: list[int] = []
     for i in range(stacks):
         for j in range(slices):
-            a = i * (slices + 1) + j
-            b = a + slices + 1
+            a: int = i * (slices + 1) + j
+            b: int = a + slices + 1
             # GLUS: (a, b, b+1), (a, b+1, a+1)
             idx.extend([a, b, b + 1, a, b + 1, a + 1])
     return Shape(
@@ -877,7 +889,7 @@ def make_plane(half: float = 1.0) -> Shape:
     Vertex order matches GLUS so demos that rely on a specific quad
     layout (Example 13's tess patch indices [0,1,3,2]) work directly.
     """
-    v = np.array(
+    v: np.ndarray = np.array(
         [
             [-half, -half, 0, 1],  # 0: bottom-left
             [half, -half, 0, 1],  # 1: bottom-right
@@ -886,14 +898,14 @@ def make_plane(half: float = 1.0) -> Shape:
         ],
         dtype=np.float32,
     )
-    n = np.array([[0, 0, 1]] * 4, dtype=np.float32)
-    t = np.array([[0, 0], [1, 0], [0, 1], [1, 1]], dtype=np.float32)
-    i = np.array([0, 1, 2, 1, 3, 2], dtype=np.uint32)
+    n: np.ndarray = np.array([[0, 0, 1]] * 4, dtype=np.float32)
+    t: np.ndarray = np.array([[0, 0], [1, 0], [0, 1], [1, 1]], dtype=np.float32)
+    i: np.ndarray = np.array([0, 1, 2, 1, 3, 2], dtype=np.uint32)
     return Shape(vertices=v, normals=n, texcoords=t, indices=i)
 
 
 def make_rectangular_plane(half_x: float, half_y: float) -> Shape:
-    v = np.array(
+    v: np.ndarray = np.array(
         [
             [-half_x, -half_y, 0, 1],
             [half_x, -half_y, 0, 1],
@@ -902,9 +914,9 @@ def make_rectangular_plane(half_x: float, half_y: float) -> Shape:
         ],
         dtype=np.float32,
     )
-    n = np.array([[0, 0, 1]] * 4, dtype=np.float32)
-    t = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float32)
-    i = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+    n: np.ndarray = np.array([[0, 0, 1]] * 4, dtype=np.float32)
+    t: np.ndarray = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=np.float32)
+    i: np.ndarray = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
     return Shape(vertices=v, normals=n, texcoords=t, indices=i)
 
 
@@ -1073,8 +1085,8 @@ def make_cylinder(half_height: float, radius: float, slices: int = 32) -> Shape:
     verts, nors, uvs = [], [], []
     # side
     for j in range(slices + 1):
-        t = j / slices
-        a = t * 2 * math.pi
+        t: float = j / slices
+        a: float = t * 2 * math.pi
         ca, sa = math.cos(a), math.sin(a)
         verts.append([radius * ca, -half_height, radius * sa, 1])
         nors.append([ca, 0, sa])
@@ -1082,7 +1094,7 @@ def make_cylinder(half_height: float, radius: float, slices: int = 32) -> Shape:
         verts.append([radius * ca, half_height, radius * sa, 1])
         nors.append([ca, 0, sa])
         uvs.append([t, 1])
-    side_idx = []
+    side_idx: list[int] = []
     for j in range(slices):
         a = 2 * j
         side_idx.extend([a, a + 1, a + 2, a + 2, a + 1, a + 3])
@@ -1098,7 +1110,7 @@ def make_cylinder(half_height: float, radius: float, slices: int = 32) -> Shape:
         )
         nors.append([0, 1, 0])
         uvs.append([0.5 + 0.5 * math.cos(a), 0.5 + 0.5 * math.sin(a)])
-    cap_top_idx = []
+    cap_top_idx: list[int] = []
     for j in range(slices):
         cap_top_idx.extend([base_top, base_top + 1 + j, base_top + 2 + j])
 
@@ -1113,11 +1125,11 @@ def make_cylinder(half_height: float, radius: float, slices: int = 32) -> Shape:
         )
         nors.append([0, -1, 0])
         uvs.append([0.5 + 0.5 * math.cos(a), 0.5 - 0.5 * math.sin(a)])
-    cap_bot_idx = []
+    cap_bot_idx: list[int] = []
     for j in range(slices):
         cap_bot_idx.extend([base_bot, base_bot + 2 + j, base_bot + 1 + j])
 
-    idx = side_idx + cap_top_idx + cap_bot_idx
+    idx: list[int] = side_idx + cap_top_idx + cap_bot_idx
     return Shape(
         vertices=np.asarray(verts, dtype=np.float32),
         normals=np.asarray(nors, dtype=np.float32),
@@ -1129,8 +1141,8 @@ def make_cylinder(half_height: float, radius: float, slices: int = 32) -> Shape:
 def make_cone(half_height: float, radius: float, slices: int = 32) -> Shape:
     verts, nors, uvs = [], [], []
     for j in range(slices + 1):
-        t = j / slices
-        a = t * 2 * math.pi
+        t: float = j / slices
+        a: float = t * 2 * math.pi
         ca, sa = math.cos(a), math.sin(a)
         nx, ny, nz = ca, radius / (2 * half_height), sa
         ln: float = math.sqrt(nx * nx + ny * ny + nz * nz)
@@ -1141,11 +1153,11 @@ def make_cone(half_height: float, radius: float, slices: int = 32) -> Shape:
         verts.append([radius * ca, -half_height, radius * sa, 1])
         nors.append([nx, ny, nz])
         uvs.append([t, 0])
-    side_idx = []
+    side_idx: list[int] = []
     for j in range(slices):
         a = 2 * j
         side_idx.extend([a, a + 1, a + 3])
-    base = len(verts)
+    base: int = len(verts)
     verts.append([0, -half_height, 0, 1])
     nors.append([0, -1, 0])
     uvs.append([0.5, 0.5])
@@ -1156,10 +1168,10 @@ def make_cone(half_height: float, radius: float, slices: int = 32) -> Shape:
         )
         nors.append([0, -1, 0])
         uvs.append([0.5 + 0.5 * math.cos(a), 0.5 - 0.5 * math.sin(a)])
-    cap_idx = []
+    cap_idx: list[int] = []
     for j in range(slices):
         cap_idx.extend([base, base + 2 + j, base + 1 + j])
-    idx = side_idx + cap_idx
+    idx: list[int] = side_idx + cap_idx
     return Shape(
         vertices=np.asarray(verts, dtype=np.float32),
         normals=np.asarray(nors, dtype=np.float32),
@@ -1174,11 +1186,11 @@ def make_disc(radius: float = 0.5, slices: int = 32) -> Shape:
     nors.append([0, 0, 1])
     uvs.append([0.5, 0.5])
     for j in range(slices + 1):
-        a = (j / slices) * 2 * math.pi
+        a: float = (j / slices) * 2 * math.pi
         verts.append([radius * math.cos(a), radius * math.sin(a), 0, 1])
         nors.append([0, 0, 1])
         uvs.append([0.5 + 0.5 * math.cos(a), 0.5 + 0.5 * math.sin(a)])
-    idx = []
+    idx: list[int] = []
     for j in range(slices):
         idx.extend([0, j + 1, j + 2])
     return Shape(
@@ -1191,23 +1203,23 @@ def make_disc(radius: float = 0.5, slices: int = 32) -> Shape:
 
 def make_dome(radius: float = 0.5, slices: int = 32) -> Shape:
     """Hemisphere (top half of sphere)."""
-    stacks = slices // 4
+    stacks: int = slices // 4
     verts, nors, uvs = [], [], []
     for i in range(stacks + 1):
-        phi = (math.pi / 2) * i / stacks
+        phi: float = (math.pi / 2) * i / stacks
         sp, cp = math.sin(phi), math.cos(phi)
         for j in range(slices + 1):
-            theta = 2.0 * math.pi * j / slices
+            theta: float = 2.0 * math.pi * j / slices
             st, ct = math.sin(theta), math.cos(theta)
             x, y, z = sp * ct, cp, sp * st
             verts.append([radius * x, radius * y, radius * z, 1.0])
             nors.append([x, y, z])
             uvs.append([j / slices, 1.0 - i / stacks])
-    idx = []
+    idx: list[int] = []
     for i in range(stacks):
         for j in range(slices):
-            a = i * (slices + 1) + j
-            b = a + slices + 1
+            a: int = i * (slices + 1) + j
+            b: int = a + slices + 1
             idx.extend([a, b, a + 1, a + 1, b, b + 1])
     return Shape(
         vertices=np.asarray(verts, dtype=np.float32),
@@ -1219,29 +1231,29 @@ def make_dome(radius: float = 0.5, slices: int = 32) -> Shape:
 
 def calculate_tangents(shape: Shape) -> Shape:
     """Add tangents and bitangents using positions/normals/uvs and indices."""
-    verts = shape.vertices[:, :3]
-    uvs = shape.texcoords
-    idx = shape.indices.reshape(-1, 3)
-    tan = np.zeros((len(verts), 3), dtype=np.float32)
-    bit = np.zeros((len(verts), 3), dtype=np.float32)
+    verts: np.ndarray = shape.vertices[:, :3]
+    uvs: np.ndarray = shape.texcoords
+    idx: np.ndarray = shape.indices.reshape(-1, 3)
+    tan: np.ndarray = np.zeros((len(verts), 3), dtype=np.float32)
+    bit: np.ndarray = np.zeros((len(verts), 3), dtype=np.float32)
     for i0, i1, i2 in idx:
         v0, v1, v2 = verts[i0], verts[i1], verts[i2]
         u0, u1, u2 = uvs[i0], uvs[i1], uvs[i2]
         e1, e2 = v1 - v0, v2 - v0
         d1, d2 = u1 - u0, u2 - u0
-        denom = d1[0] * d2[1] - d2[0] * d1[1]
+        denom: float = d1[0] * d2[1] - d2[0] * d1[1]
         if abs(denom) < 1e-8:
             continue
-        f = 1.0 / denom
-        t = f * (d2[1] * e1 - d1[1] * e2)
-        b = f * (-d2[0] * e1 + d1[0] * e2)
+        f: float = 1.0 / denom
+        t: np.ndarray = f * (d2[1] * e1 - d1[1] * e2)
+        b: np.ndarray = f * (-d2[0] * e1 + d1[0] * e2)
         for j in (i0, i1, i2):
             tan[j] += t
             bit[j] += b
     # orthonormalize against normal
-    n = shape.normals
+    n: np.ndarray = shape.normals
     tan = tan - n * (n * tan).sum(axis=1, keepdims=True)
-    norms = np.linalg.norm(tan, axis=1, keepdims=True)
+    norms: np.ndarray = np.linalg.norm(tan, axis=1, keepdims=True)
     tan = np.where(
         norms > 1e-8, tan / np.maximum(norms, 1e-8), np.array([1.0, 0.0, 0.0])
     )
@@ -1261,8 +1273,8 @@ def identity4() -> np.ndarray:
 def perspective(
     fovy_deg: float, aspect: float, near: float, far: float
 ) -> np.ndarray:
-    f = 1.0 / math.tan(math.radians(fovy_deg) / 2.0)
-    m = np.zeros((4, 4), dtype=np.float32)
+    f: float = 1.0 / math.tan(math.radians(fovy_deg) / 2.0)
+    m: np.ndarray = np.zeros((4, 4), dtype=np.float32)
     m[0, 0] = f / aspect
     m[1, 1] = f
     m[2, 2] = (far + near) / (near - far)
@@ -1279,7 +1291,7 @@ def ortho(
     near: float,
     far: float,
 ) -> np.ndarray:
-    m = np.zeros((4, 4), dtype=np.float32)
+    m: np.ndarray = np.zeros((4, 4), dtype=np.float32)
     m[0, 0] = 2.0 / (right - left)
     m[1, 1] = 2.0 / (top - bottom)
     m[2, 2] = -2.0 / (far - near)
@@ -1298,7 +1310,7 @@ def frustum(
     near: float,
     far: float,
 ) -> np.ndarray:
-    m = np.zeros((4, 4), dtype=np.float32)
+    m: np.ndarray = np.zeros((4, 4), dtype=np.float32)
     m[0, 0] = 2.0 * near / (right - left)
     m[1, 1] = 2.0 * near / (top - bottom)
     m[0, 2] = (right + left) / (right - left)
@@ -1313,12 +1325,12 @@ def look_at(eye: Vec3, center: Vec3, up: Vec3) -> np.ndarray:
     eye: np.ndarray = np.asarray(eye, dtype=np.float32)
     center: np.ndarray = np.asarray(center, dtype=np.float32)
     up: np.ndarray = np.asarray(up, dtype=np.float32)
-    f = center - eye
+    f: np.ndarray = center - eye
     f /= np.linalg.norm(f)
-    s = np.cross(f, up)
+    s: np.ndarray = np.cross(f, up)
     s /= np.linalg.norm(s)
-    u = np.cross(s, f)
-    m = np.eye(4, dtype=np.float32)
+    u: np.ndarray = np.cross(s, f)
+    m: np.ndarray = np.eye(4, dtype=np.float32)
     m[0, :3] = s
     m[1, :3] = u
     m[2, :3] = -f
@@ -1329,7 +1341,7 @@ def look_at(eye: Vec3, center: Vec3, up: Vec3) -> np.ndarray:
 
 
 def translate(x: float, y: float, z: float) -> np.ndarray:
-    m = np.eye(4, dtype=np.float32)
+    m: np.ndarray = np.eye(4, dtype=np.float32)
     m[0, 3] = x
     m[1, 3] = y
     m[2, 3] = z
@@ -1337,7 +1349,7 @@ def translate(x: float, y: float, z: float) -> np.ndarray:
 
 
 def scale_m(x: float, y: float, z: float) -> np.ndarray:
-    m = np.eye(4, dtype=np.float32)
+    m: np.ndarray = np.eye(4, dtype=np.float32)
     m[0, 0] = x
     m[1, 1] = y
     m[2, 2] = z
@@ -1347,7 +1359,7 @@ def scale_m(x: float, y: float, z: float) -> np.ndarray:
 def rotate_x(deg: float) -> np.ndarray:
     r: float = math.radians(deg)
     c, s = math.cos(r), math.sin(r)
-    m = np.eye(4, dtype=np.float32)
+    m: np.ndarray = np.eye(4, dtype=np.float32)
     m[1, 1] = c
     m[1, 2] = -s
     m[2, 1] = s
@@ -1356,9 +1368,9 @@ def rotate_x(deg: float) -> np.ndarray:
 
 
 def rotate_y(deg: float) -> np.ndarray:
-    r = math.radians(deg)
+    r: float = math.radians(deg)
     c, s = math.cos(r), math.sin(r)
-    m = np.eye(4, dtype=np.float32)
+    m: np.ndarray = np.eye(4, dtype=np.float32)
     m[0, 0] = c
     m[0, 2] = s
     m[2, 0] = -s
@@ -1367,9 +1379,9 @@ def rotate_y(deg: float) -> np.ndarray:
 
 
 def rotate_z(deg: float) -> np.ndarray:
-    r = math.radians(deg)
+    r: float = math.radians(deg)
     c, s = math.cos(r), math.sin(r)
-    m = np.eye(4, dtype=np.float32)
+    m: np.ndarray = np.eye(4, dtype=np.float32)
     m[0, 0] = c
     m[0, 1] = -s
     m[1, 0] = s
@@ -1378,13 +1390,13 @@ def rotate_z(deg: float) -> np.ndarray:
 
 
 def rotate_axis(deg: float, axis: Vec3) -> np.ndarray:
-    r = math.radians(deg)
+    r: float = math.radians(deg)
     c, s = math.cos(r), math.sin(r)
     x, y, z = axis
-    n = math.sqrt(x * x + y * y + z * z)
+    n: float = math.sqrt(x * x + y * y + z * z)
     x, y, z = x / n, y / n, z / n
-    one_minus_c = 1 - c
-    m = np.array(
+    one_minus_c: float = 1 - c
+    m: np.ndarray = np.array(
         [
             [
                 c + x * x * one_minus_c,
@@ -1413,7 +1425,9 @@ def rotate_axis(deg: float, axis: Vec3) -> np.ndarray:
 
 def normal_matrix3(view_or_modelview: np.ndarray) -> np.ndarray:
     """Top-left 3x3 of inverse-transpose. For rigid-body, just the 3x3."""
-    n = np.linalg.inv(view_or_modelview[:3, :3]).T.astype(np.float32)
+    n: np.ndarray = np.linalg.inv(view_or_modelview[:3, :3]).T.astype(
+        np.float32
+    )
     return n
 
 
@@ -1421,8 +1435,8 @@ def planar_shadow_directional(plane: Vec4, light_dir: Vec3) -> np.ndarray:
     """plane: (a,b,c,d) with ax+by+cz+d=0; light_dir: (x,y,z)."""
     a, b, c, d = plane
     lx, ly, lz = light_dir
-    dot = a * lx + b * ly + c * lz
-    m = np.array(
+    dot: float = a * lx + b * ly + c * lz
+    m: np.ndarray = np.array(
         [
             [dot - lx * a, -lx * b, -lx * c, -lx * d],
             [-ly * a, dot - ly * b, -ly * c, -ly * d],
@@ -1437,8 +1451,8 @@ def planar_shadow_directional(plane: Vec4, light_dir: Vec3) -> np.ndarray:
 def planar_shadow_point(plane: Vec4, light_pos: Vec3) -> np.ndarray:
     a, b, c, d = plane
     lx, ly, lz = light_pos
-    dot = a * lx + b * ly + c * lz + d
-    m = np.array(
+    dot: float = a * lx + b * ly + c * lz + d
+    m: np.ndarray = np.array(
         [
             [dot - lx * a, -lx * b, -lx * c, -lx * d],
             [-ly * a, dot - ly * b, -ly * c, -ly * d],
@@ -1467,13 +1481,15 @@ def upload_matrix3(loc: int, m: np.ndarray) -> None:
 
 
 def make_vbo(
-    data: np.ndarray,
+    data: np.ndarray | None,
     target: GLenum = GL.GL_ARRAY_BUFFER,
     usage: GLenum = GL.GL_STATIC_DRAW,
 ) -> int:
+    if data is None:
+        raise ValueError("make_vbo requires vertex data, got None")
     buf: int = GL.glGenBuffers(1)
     GL.glBindBuffer(target, buf)
-    arr = np.ascontiguousarray(data)
+    arr: np.ndarray = np.ascontiguousarray(data)
     GL.glBufferData(target=target, size=arr.nbytes, data=arr, usage=usage)
     GL.glBindBuffer(target, 0)
     return buf
@@ -1658,7 +1674,7 @@ def run_demo(
     if samples:
         glfw.window_hint(hint=glfw.SAMPLES, value=samples)
 
-    win = glfw.create_window(
+    win: Any = glfw.create_window(
         width=width, height=height, title=title, monitor=None, share=None
     )
     if not win:
@@ -1685,7 +1701,7 @@ def run_demo(
     # the ignores here and in the render block below.
     if HAS_IMGUI:
         imgui.create_context()  # ty: ignore[unresolved-attribute]
-        impl = GlfwRenderer(win)  # ty: ignore[call-non-callable]
+        impl: Any = GlfwRenderer(win)  # ty: ignore[call-non-callable]
     else:
         impl = None
 
@@ -1708,7 +1724,7 @@ def run_demo(
         if impl is not None:
             impl.mouse_button_callback(window, button, action, mods)
         x, y = glfw.get_cursor_pos(window)
-        pressed = action == glfw.PRESS
+        pressed: bool = action == glfw.PRESS
         if 0 <= button < 3:
             mouse_buttons[button] = pressed
         if callbacks.mouse:
@@ -1720,7 +1736,7 @@ def run_demo(
         last_mouse[0] = int(x)
         last_mouse[1] = int(y)
         if callbacks.mouse_move:
-            mask = sum((1 << i) for i, b in enumerate(mouse_buttons) if b)
+            mask: int = sum((1 << i) for i, b in enumerate(mouse_buttons) if b)
             callbacks.mouse_move(mask, int(x), int(y))
 
     # Our callbacks override imgui's for key/mouse-button/cursor-pos (we
@@ -1738,8 +1754,8 @@ def run_demo(
     if callbacks.reshape:
         callbacks.reshape(fbw, fbh)
 
-    last_size = (fbw, fbh)
-    last_time = glfw.get_time()
+    last_size: tuple[int, int] = (fbw, fbh)
+    last_time: float = glfw.get_time()
 
     while not glfw.window_should_close(win):
         glfw.poll_events()
@@ -1752,11 +1768,11 @@ def run_demo(
             last_size = (fbw, fbh)
 
         now: float = glfw.get_time()
-        dt = now - last_time
+        dt: float = now - last_time
         last_time = now
 
         # Match /mvp's working pattern: scene first, imgui frame on top.
-        cont = True
+        cont: bool = True
         if callbacks.update:
             cont = callbacks.update(dt)
 
@@ -1766,16 +1782,18 @@ def run_demo(
             # its font atlas to GL_TEXTURE0/GL_TEXTURE_2D; we also save the
             # CUBE_MAP and 3D bindings on the same unit to be safe.
             GL.glActiveTexture(GL.GL_TEXTURE0)
-            saved_t0_2d = GL.glGetIntegerv(GL.GL_TEXTURE_BINDING_2D)
-            saved_t0_cube = GL.glGetIntegerv(GL.GL_TEXTURE_BINDING_CUBE_MAP)
-            saved_t0_3d = GL.glGetIntegerv(GL.GL_TEXTURE_BINDING_3D)
+            saved_t0_2d: int = GL.glGetIntegerv(GL.GL_TEXTURE_BINDING_2D)
+            saved_t0_cube: int = GL.glGetIntegerv(
+                GL.GL_TEXTURE_BINDING_CUBE_MAP
+            )
+            saved_t0_3d: int = GL.glGetIntegerv(GL.GL_TEXTURE_BINDING_3D)
 
             # imgui_bundle's GL backend sets up blend/cull/depth/scissor but
             # leaves GL_STENCIL_TEST untouched (and doesn't save/restore it).
             # A demo that left a restrictive glStencilFunc enabled (e.g. the
             # stencil-cap example) would otherwise stencil-reject the whole
             # UI, so disable it around imgui's draw and restore it after.
-            saved_stencil = GL.glIsEnabled(GL.GL_STENCIL_TEST)
+            saved_stencil: bool = GL.glIsEnabled(GL.GL_STENCIL_TEST)
             GL.glDisable(GL.GL_STENCIL_TEST)
 
             imgui.new_frame()  # ty: ignore[unresolved-attribute]  # guarded by HAS_IMGUI (see init note)

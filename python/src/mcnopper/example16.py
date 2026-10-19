@@ -118,7 +118,7 @@ def reshape(w: int, h: int) -> None:
 def update(dt: float) -> bool:
     if ui["auto_rotate"]:
         ui["angle"] = (ui["angle"] + 30.0 * dt) % 360.0
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
     mv: np.ndarray = state["view"] @ common.rotate_y(ui["angle"])
     common.upload_matrix(loc=state["mv_loc"], m=mv)

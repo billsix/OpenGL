@@ -32,13 +32,13 @@ class MaterialProperties:
     exponent: float
 
 
-light = LightProperties(
+light: LightProperties = LightProperties(
     direction=[1.0, 1.0, 1.0],
     ambient=[0.3, 0.3, 0.3, 1.0],
     diffuse=[1.0, 1.0, 1.0, 1.0],
     specular=[1.0, 1.0, 1.0, 1.0],
 )
-material = MaterialProperties(
+material: MaterialProperties = MaterialProperties(
     ambient=[0.0, 0.0, 1.0, 1.0],
     diffuse=[0.0, 0.0, 1.0, 1.0],
     specular=[1.0, 1.0, 1.0, 1.0],
@@ -110,11 +110,11 @@ def reshape(w: int, h: int) -> None:
 
 
 def update(dt: float) -> bool:
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
 
     ld: np.ndarray = np.asarray(light.direction, dtype=np.float32)
-    n = np.linalg.norm(ld)
+    n: np.floating = np.linalg.norm(ld)
     if n > 1e-8:
         ld = ld / n
     # transform light direction to view space (rotation only)

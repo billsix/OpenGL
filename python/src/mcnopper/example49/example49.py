@@ -84,7 +84,7 @@ def _fit_matrix(scene: gltf.Scene) -> tuple[np.ndarray, float]:
 
 
 def init() -> bool:
-    print("[Example 49] Loading glTF + building IBL (~5s)...")
+    print("[Example 49] Loading glTF + building IBL (~5s)...")  # noqa: T201
     panorama: int = common.upload_hdr_2d(common.find_media(PANORAMA))
     GL.glBindTexture(GL.GL_TEXTURE_2D, panorama)
     # As the C example: mipmapped panorama for the cubemap conversions.
@@ -125,7 +125,7 @@ def init() -> bool:
     )
 
     scene: gltf.Scene = gltf.load_scene(common.find_media(GLTF_MODEL))
-    print(
+    print(  # noqa: T201
         f"[Example 49] {len(scene.primitives)} primitives, "
         f"{len(scene.skins)} skins, {len(scene.animations)} animations."
     )
@@ -225,7 +225,7 @@ def init() -> bool:
     )
     status: int = GL.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER)
     if status != GL.GL_FRAMEBUFFER_COMPLETE:
-        print(f"[Example 49] MSAA framebuffer incomplete: 0x{status:x}")
+        print(f"[Example 49] MSAA framebuffer incomplete: 0x{status:x}")  # noqa: T201
         return False
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
 
@@ -254,7 +254,7 @@ def init() -> bool:
         vp_bg=common.uniform(prog=prog_bg, name="u_viewProjectionMatrix"),
         gam_f=common.uniform(prog=prog_full, name="u_gamma"),
     )
-    print("[Example 49] Ready.")
+    print("[Example 49] Ready.")  # noqa: T201
     return True
 
 
@@ -279,7 +279,9 @@ def _draw_primitive(p: dict, fit: np.ndarray) -> None:
     if p["skinned"]:
         u: dict[str, int] = state["u_skinned"]
         GL.glUseProgram(state["prog_skinned"])
-        joints: np.ndarray = scene.skins[prim.skin].joint_matrices
+        skin_idx: int | None = prim.skin
+        assert skin_idx is not None  # skin index is set when p["skinned"]
+        joints: np.ndarray = scene.skins[skin_idx].joint_matrices
         gl.upload_joint_matrices(
             loc=u["u_jointMatrices"], matrices=fit @ joints
         )
@@ -340,7 +342,7 @@ def update(dt: float) -> bool:
     GL.glEnable(GL.GL_DEPTH_TEST)
     GL.glDepthMask(GL.GL_TRUE)
     GL.glDisable(GL.GL_BLEND)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     # --- Background sphere (inside-facing, no depth write) ---
     GL.glFrontFace(GL.GL_CW)
@@ -358,11 +360,11 @@ def update(dt: float) -> bool:
     GL.glDepthMask(GL.GL_TRUE)
 
     # --- IBL textures on units 5-7 ---
-    GL.glActiveTexture(GL.GL_TEXTURE0 + gl.UNIT_SPECULAR_ENV)
+    GL.glActiveTexture(GL.GL_TEXTURE0 + gl.UNIT_SPECULAR_ENV)  # ty: ignore[unsupported-operator]
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP_ARRAY, state["ibl"]["spec"])
-    GL.glActiveTexture(GL.GL_TEXTURE0 + gl.UNIT_DIFFUSE_ENV)
+    GL.glActiveTexture(GL.GL_TEXTURE0 + gl.UNIT_DIFFUSE_ENV)  # ty: ignore[unsupported-operator]
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, state["ibl"]["diff"])
-    GL.glActiveTexture(GL.GL_TEXTURE0 + gl.UNIT_BRDF_LUT)
+    GL.glActiveTexture(GL.GL_TEXTURE0 + gl.UNIT_BRDF_LUT)  # ty: ignore[unsupported-operator]
     GL.glBindTexture(GL.GL_TEXTURE_2D, state["ibl"]["lut"])
 
     # VP + eye on both PBR programs.

@@ -52,7 +52,7 @@ def init() -> bool:
 
     vao: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao)
-    bufs = [
+    bufs: list[tuple[int, int, str]] = [
         (common.make_vbo(plane.vertices), 4, "a_vertex"),
         (common.make_vbo(plane.tangents), 3, "a_tangent"),
         (common.make_vbo(plane.bitangents), 3, "a_bitangent"),
@@ -119,7 +119,7 @@ def reshape(w: int, h: int) -> None:
 def update(dt: float) -> bool:
     if ui["auto_rotate"]:
         ui["angle"] = (ui["angle"] + 45.0 * dt) % 360.0
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
     GL.glUniform1f(
         state["disp_loc"], DISPLACEMENT_SCALE if ui["displacement"] else 0.0

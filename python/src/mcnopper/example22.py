@@ -54,7 +54,9 @@ def _build_adjacency(positions: np.ndarray, indices: np.ndarray) -> np.ndarray:
             continue
         for u, v, w in ((a, b, c), (b, c, a), (c, a, b)):
             by_index.setdefault((min(u, v), max(u, v)), []).append((i, w))
-            key = tuple(sorted((keys[u], keys[v])))
+            key: tuple[tuple[float, ...], ...] = tuple(
+                sorted((keys[u], keys[v]))
+            )
             by_vertex.setdefault(key, []).append((i, w))
     for i, (a, b, c) in enumerate(tris):
         if degenerate[i]:
@@ -82,7 +84,7 @@ def init() -> bool:
         1.0
     )  # NDC fullscreen is its job here
 
-    adj_indices = _build_adjacency(
+    adj_indices: np.ndarray = _build_adjacency(
         positions=torus.vertices, indices=torus.indices
     )
 
@@ -213,7 +215,7 @@ def update(dt: float) -> bool:
         ui["angle"] = (ui["angle"] + 20.0 * dt) % 360.0
 
     GL.glClear(
-        GL.GL_COLOR_BUFFER_BIT
+        GL.GL_COLOR_BUFFER_BIT  # ty: ignore[unsupported-operator]
         | GL.GL_DEPTH_BUFFER_BIT
         | GL.GL_STENCIL_BUFFER_BIT
     )

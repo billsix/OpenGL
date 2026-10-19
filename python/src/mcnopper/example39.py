@@ -12,12 +12,13 @@ from OpenGL.GL import shaders
 
 from mcnopper import common
 from mcnopper.common import GL
+from OpenGL.constant import Constant
 
 state: dict = {}
 
 
-def _make_separable(stage: int, src: str) -> int:
-    obj = shaders.compileShader(src, stage)
+def _make_separable(stage: int | Constant, src: str) -> int:
+    obj: int = shaders.compileShader(src, stage)
     prog: int = GL.glCreateProgram()
     GL.glProgramParameteri(prog, GL.GL_PROGRAM_SEPARABLE, GL.GL_TRUE)
     GL.glAttachShader(prog, obj)
@@ -47,22 +48,22 @@ def init() -> bool:
     with open(
         common.find_shader(script_file=__file__, filename="offset.vert.glsl")
     ) as f:
-        vs_src = f.read()
+        vs_src: str = f.read()
     with open(
         common.find_shader(
             script_file=__file__, filename="red_green_blue.frag.glsl"
         )
     ) as f:
-        fs_src = f.read()
+        fs_src: str = f.read()
 
-    vs_prog = _make_separable(stage=GL.GL_VERTEX_SHADER, src=vs_src)
-    fs_prog = _make_separable(stage=GL.GL_FRAGMENT_SHADER, src=fs_src)
+    vs_prog: int = _make_separable(stage=GL.GL_VERTEX_SHADER, src=vs_src)
+    fs_prog: int = _make_separable(stage=GL.GL_FRAGMENT_SHADER, src=fs_src)
 
     pipeline: int = GL.glGenProgramPipelines(1)
     GL.glUseProgramStages(pipeline, GL.GL_VERTEX_SHADER_BIT, vs_prog)
     GL.glUseProgramStages(pipeline, GL.GL_FRAGMENT_SHADER_BIT, fs_prog)
 
-    sub_off = {
+    sub_off: dict[str, int] = {
         "red": GL.glGetSubroutineIndex(
             vs_prog, GL.GL_VERTEX_SHADER, "redOffset"
         ),
@@ -73,7 +74,7 @@ def init() -> bool:
             vs_prog, GL.GL_VERTEX_SHADER, "blueOffset"
         ),
     }
-    sub_col = {
+    sub_col: dict[str, int] = {
         "red": GL.glGetSubroutineIndex(
             fs_prog, GL.GL_FRAGMENT_SHADER, "redColor"
         ),

@@ -14,6 +14,7 @@ import numpy as np
 
 from mcnopper import common
 from mcnopper.common import GL
+from OpenGL.constant import Constant
 
 TEXTURE_WIDTH: int = 1024
 TEXTURE_HEIGHT: int = 768
@@ -26,9 +27,9 @@ state: dict = {}
 def _make_attachment(
     w: int,
     h: int,
-    internal: int = GL.GL_RGBA8,
-    fmt: int = GL.GL_RGBA,
-    type_: int = GL.GL_UNSIGNED_BYTE,
+    internal: int | Constant = GL.GL_RGBA8,
+    fmt: int | Constant = GL.GL_RGBA,
+    type_: int | Constant = GL.GL_UNSIGNED_BYTE,
 ) -> int:
     tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_2D, tex)
@@ -66,8 +67,8 @@ def init() -> bool:
         frag="point_light.frag.glsl",
     )
 
-    diff_tex = _make_attachment(w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT)
-    spec_tex = _make_attachment(w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT)
+    diff_tex: int = _make_attachment(w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT)
+    spec_tex: int = _make_attachment(w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT)
     pos_tex: int = _make_attachment(
         w=TEXTURE_WIDTH,
         h=TEXTURE_HEIGHT,
@@ -75,14 +76,14 @@ def init() -> bool:
         fmt=GL.GL_RGBA,
         type_=GL.GL_FLOAT,
     )
-    norm_tex = _make_attachment(
+    norm_tex: int = _make_attachment(
         w=TEXTURE_WIDTH,
         h=TEXTURE_HEIGHT,
         internal=GL.GL_RGB16F,
         fmt=GL.GL_RGB,
         type_=GL.GL_FLOAT,
     )
-    depth_tex = _make_attachment(
+    depth_tex: int = _make_attachment(
         w=TEXTURE_WIDTH,
         h=TEXTURE_HEIGHT,
         internal=GL.GL_DEPTH_COMPONENT24,
@@ -136,7 +137,7 @@ def init() -> bool:
     )
     status: int = GL.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER)
     if status != GL.GL_FRAMEBUFFER_COMPLETE:
-        print(f"[example31] G-buffer FBO incomplete: 0x{status:x}")
+        print(f"[example31] G-buffer FBO incomplete: 0x{status:x}")  # noqa: T201
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
 
     GL.glUseProgram(prog_ds)
@@ -197,11 +198,13 @@ def init() -> bool:
         loc=common.uniform(prog=prog_pl, name="u_biasMatrix"), m=bias
     )
 
-    rng = np.random.default_rng(13)
-    pos_m = rng.uniform(0, POINT_LIGHT_COUNT - 2.0, POINT_LIGHT_COUNT).astype(
+    rng: np.random.Generator = np.random.default_rng(13)
+    pos_m: np.ndarray = rng.uniform(
+        0, POINT_LIGHT_COUNT - 2.0, POINT_LIGHT_COUNT
+    ).astype(np.float32)
+    dir_m: np.ndarray = (rng.integers(0, 2, POINT_LIGHT_COUNT) * 2 - 1).astype(
         np.float32
     )
-    dir_m = (rng.integers(0, 2, POINT_LIGHT_COUNT) * 2 - 1).astype(np.float32)
 
     GL.glClearColor(0, 0, 0, 0)
     GL.glClearDepth(1.0)
@@ -261,7 +264,7 @@ def update(dt: float) -> bool:
         fovy_deg=40.0, aspect=w / max(h, 1), near=1.0, far=100.0
     )
     state["angle"] += 2.0 * math.pi * dt / 20.0
-    a = state["angle"]
+    a: float = state["angle"]
     view: np.ndarray = common.look_at(
         eye=[math.sin(a) * 10, 4, math.cos(a) * 10],
         center=[0, 0, 0],
@@ -280,7 +283,7 @@ def update(dt: float) -> bool:
         ],
     )
     GL.glViewport(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog_ds"])
     common.upload_matrix(loc=state["proj_loc_ds"], m=proj)
     common.upload_matrix(loc=state["view_loc_ds"], m=view)
@@ -308,12 +311,12 @@ def update(dt: float) -> bool:
 
     # Animate point-light positions
     state["pos_m"] += state["dir_m"] * dt * 5.0
-    over = state["pos_m"] > POINT_LIGHT_COUNT - 2.0
+    over: np.ndarray = state["pos_m"] > POINT_LIGHT_COUNT - 2.0
     state["pos_m"][over] = (POINT_LIGHT_COUNT - 2.0) - (
         state["pos_m"][over] - (POINT_LIGHT_COUNT - 2.0)
     )
     state["dir_m"][over] *= -1
-    under = state["pos_m"] < 0
+    under: np.ndarray = state["pos_m"] < 0
     state["pos_m"][under] = -state["pos_m"][under]
     state["dir_m"][under] *= -1
 
@@ -323,7 +326,7 @@ def update(dt: float) -> bool:
     # framebuffer. Use GL_BACK (the default for double-buffered windows).
     GL.glDrawBuffer(GL.GL_BACK)
     GL.glViewport(0, 0, w, h)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog_pl"])
     common.upload_matrix(loc=state["proj_loc_pl"], m=proj)
     common.upload_matrix(loc=state["view_loc_pl"], m=view)

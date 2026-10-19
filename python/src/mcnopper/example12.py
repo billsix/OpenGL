@@ -229,7 +229,7 @@ def update(dt: float) -> bool:
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_2D, state["shadow_tex"])
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
     common.upload_matrix(loc=state["view_loc"], m=state["view"])
     common.upload_matrix(loc=state["sm_loc"], m=shadow_matrix)

@@ -15,7 +15,7 @@ from mcnopper import common
 from mcnopper.common import GL
 
 ROWS: int = 31
-SPHERE_CENTER = (0.0, 0.0, -0.01, 1.0)
+SPHERE_CENTER: tuple[float, float, float, float] = (0.0, 0.0, -0.01, 1.0)
 SPHERE_RADIUS: float = 1.0
 state: dict = {}
 
@@ -26,12 +26,12 @@ def init() -> bool:
     )
     # Rotate so the grid lies in xz-plane and lift by 1.1
     rot: np.ndarray = common.translate(x=0, y=1.1, z=0) @ common.rotate_x(-90.0)
-    rotated = (rot @ grid.vertices.T).T
+    rotated: np.ndarray = (rot @ grid.vertices.T).T
 
     distance_rest: float = float(
         np.linalg.norm(rotated[1, :3] - rotated[0, :3])
     )
-    distance_diag = math.sqrt(2.0) * distance_rest
+    distance_diag: float = math.sqrt(2.0) * distance_rest
 
     n_verts: int = len(grid.vertices)
     # Pad normals to vec4 for std430.
@@ -66,7 +66,7 @@ def init() -> bool:
         common.uniform(prog=prog_comp, name="u_sphereRadius"), SPHERE_RADIUS
     )
 
-    vertices_buffers = []
+    vertices_buffers: list[int] = []
     for i in range(3):
         b: int = GL.glGenBuffers(1)
         GL.glBindBuffer(GL.GL_SHADER_STORAGE_BUFFER, b)
@@ -215,7 +215,7 @@ def update(dt: float) -> bool:
                 data=state["grid_verts"],
             )
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     # Draw sphere
     GL.glEnable(GL.GL_CULL_FACE)

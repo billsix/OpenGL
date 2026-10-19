@@ -24,7 +24,7 @@ state: dict = {}
 
 
 def _make_water_grid() -> tuple[np.ndarray, np.ndarray]:
-    n = WATER_PLANE_LENGTH
+    n: int = WATER_PLANE_LENGTH
     pts: np.ndarray = np.zeros((n * n, 4), dtype=np.float32)
     for z in range(n):
         for x in range(n):
@@ -32,7 +32,7 @@ def _make_water_grid() -> tuple[np.ndarray, np.ndarray]:
     indices: np.ndarray = np.zeros(n * (n - 1) * 2, dtype=np.uint32)
     for k in range(n - 1):
         for i in range(n):
-            base = (i + k * n) * 2
+            base: int = (i + k * n) * 2
             if k % 2 == 0:
                 indices[base] = i + (k + 1) * n
                 indices[base + 1] = i + k * n
@@ -232,7 +232,7 @@ def _waves_water() -> tuple[np.ndarray, np.ndarray]:
     overall: float = 0.2
     params: np.ndarray = np.zeros((NUMBERWAVES, 4), dtype=np.float32)
     dirs: np.ndarray = np.zeros((NUMBERWAVES, 2), dtype=np.float32)
-    cfg = [
+    cfg: list[tuple[float, float, float, float, float]] = [
         (1.0, 0.01, 4.0, +1.0, +1.0),
         (0.5, 0.02, 3.0, +1.0, 0.0),
         (0.1, 0.015, 2.0, -0.1, -0.2),
@@ -245,10 +245,10 @@ def _waves_water() -> tuple[np.ndarray, np.ndarray]:
 
 
 def _waves_texture() -> tuple[np.ndarray, np.ndarray]:
-    overall = 0.2
+    overall: float = 0.2
     params: np.ndarray = np.zeros((NUMBERWAVES, 4), dtype=np.float32)
     dirs: np.ndarray = np.zeros((NUMBERWAVES, 2), dtype=np.float32)
-    cfg = [
+    cfg: list[tuple[float, float, float, float, float]] = [
         (0.05, 0.02, 0.3, +1.0, +1.5),
         (0.1, 0.01, 0.4, +0.8, +0.2),
         (0.04, 0.035, 0.1, -0.2, -0.1),
@@ -275,7 +275,7 @@ def reshape(w: int, h: int) -> None:
 def update(dt: float) -> bool:
     state["passed_time"] += dt
     state["angle"] += 2.0 * math.pi / 120.0 * dt
-    a = state["angle"]
+    a: float = state["angle"]
     view: np.ndarray = common.look_at(
         eye=[0, 1, 0],
         center=[0.5 * math.sin(a), 1.0, -0.5 * math.cos(a)],
@@ -287,7 +287,7 @@ def update(dt: float) -> bool:
     # Pass 1: render normal-map texture
     GL.glViewport(0, 0, TEXTURE_SIZE, TEXTURE_SIZE)
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, state["fbo"])
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog_wt"])
     p, d = _waves_texture()
     GL.glUniform1f(state["time_loc_wt"], state["passed_time"])
@@ -301,7 +301,7 @@ def update(dt: float) -> bool:
     GL.glViewport(0, 0, state.get("w", 1), state.get("h", 1))
 
     # Pass 2: background sphere
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, state["cubemap"])
     GL.glActiveTexture(GL.GL_TEXTURE1)

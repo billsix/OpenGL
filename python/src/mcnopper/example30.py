@@ -28,7 +28,18 @@ STACK_FLOATS: int = 28
 PADDING: float = -321.123
 
 # (cx, cy, cz, w=1, radius, padding3, emiss[4], diff[4], spec[4], shin, alpha, refl, padding)
-SPHERES = [
+SPHERES: list[
+    tuple[
+        tuple[float, float, float, float],
+        float,
+        tuple[float, float, float, float],
+        tuple[float, float, float, float],
+        tuple[float, float, float, float],
+        float,
+        float,
+        float,
+    ]
+] = [
     (
         (0, -10001, -20, 1),
         10000.0,
@@ -90,23 +101,25 @@ SPHERES = [
         0.2,
     ),
 ]
-LIGHTS = [((0, 5, -5, 1), (1, 1, 1, 1))]
+LIGHTS: list[
+    tuple[tuple[float, float, float, float], tuple[float, float, float, float]]
+] = [((0, 5, -5, 1), (1, 1, 1, 1))]
 state: dict = {}
 
 
 def _build_ray_grids() -> tuple[np.ndarray, np.ndarray]:
     fov: float = 30.0
-    aspect = WIDTH / HEIGHT
-    angle = np.tan(np.radians(fov / 2.0))
+    aspect: float = WIDTH / HEIGHT
+    angle: np.floating = np.tan(np.radians(fov / 2.0))
     dirs: np.ndarray = np.zeros(
         (HEIGHT, WIDTH, 4), dtype=np.float32
     )  # padding for std430
     for y in range(HEIGHT):
         # y=0 = bottom row so the compute-shader output aligns with the
         # fullscreen quad's UV.v = 0 at the bottom of the screen.
-        ndc_y = (2 * (y + 0.5) / HEIGHT - 1) * angle
+        ndc_y: np.floating = (2 * (y + 0.5) / HEIGHT - 1) * angle
         for x in range(WIDTH):
-            ndc_x = (2 * (x + 0.5) / WIDTH - 1) * angle * aspect
+            ndc_x: np.floating = (2 * (x + 0.5) / WIDTH - 1) * angle * aspect
             d: np.ndarray = np.array([ndc_x, ndc_y, -1.0], dtype=np.float32)
             d /= np.linalg.norm(d)
             dirs[y, x, :3] = d
@@ -116,7 +129,7 @@ def _build_ray_grids() -> tuple[np.ndarray, np.ndarray]:
 
 
 def _pack_spheres() -> np.ndarray:
-    out = []
+    out: list[float] = []
     for center, r, em, df, sp, sh, al, rfl in SPHERES:
         # Sphere struct: center[4], radius, padding[3], material{ emiss[4], diff[4], spec[4], shin, alpha, refl, pad }
         out.extend(center)
@@ -130,7 +143,7 @@ def _pack_spheres() -> np.ndarray:
 
 
 def _pack_lights() -> np.ndarray:
-    out = []
+    out: list[float] = []
     for pos, color in LIGHTS:
         out.extend(pos)
         out.extend(color)
@@ -191,11 +204,11 @@ def init() -> bool:
         GL.glBindBufferBase(GL.GL_SHADER_STORAGE_BUFFER, binding, ssbo)
         return ssbo
 
-    dir_ssbo = _ssbo(binding=1, data=dirs)
-    pos_ssbo = _ssbo(binding=2, data=pos)
-    stack_ssbo = _ssbo(binding=3, data=stack)
-    sphere_ssbo = _ssbo(binding=4, data=_pack_spheres())
-    light_ssbo = _ssbo(binding=5, data=_pack_lights())
+    dir_ssbo: int = _ssbo(binding=1, data=dirs)
+    pos_ssbo: int = _ssbo(binding=2, data=pos)
+    stack_ssbo: int = _ssbo(binding=3, data=stack)
+    sphere_ssbo: int = _ssbo(binding=4, data=_pack_spheres())
+    light_ssbo: int = _ssbo(binding=5, data=_pack_lights())
 
     state.update(
         prog=prog,

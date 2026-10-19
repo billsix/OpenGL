@@ -26,9 +26,9 @@ VCT_GRID: int = 256
 VCT_MIPLEVELS: int = 9
 VCT_WORLD_SIZE: float = 2.0
 SPONZA_SCALE: float = 0.005375
-SPONZA_T = (6.05, -65.15, 3.87)
+SPONZA_T: tuple[float, float, float] = (6.05, -65.15, 3.87)
 SPHERE_RADIUS: float = 0.02
-SPHERE_COLOR = (1.0, 0.8, 0.2)
+SPHERE_COLOR: tuple[float, float, float] = (1.0, 0.8, 0.2)
 SPHERE_ORBIT_RADIUS: float = 0.243
 SPHERE_ORBIT_Y: float = -0.26
 SPHERE_ORBIT_PERIOD: float = 7.5
@@ -42,7 +42,7 @@ ui: dict = {
 
 
 def init() -> bool:
-    print("[Example 46] Loading Sponza OBJ (this may take a few seconds)...")
+    print("[Example 46] Loading Sponza OBJ (this may take a few seconds)...")  # noqa: T201
     mesh: common.ObjMesh = common.load_obj(common.find_media("sponza.obj"))
     sphere: common.Shape = common.make_sphere(radius=SPHERE_RADIUS, slices=24)
 
@@ -153,7 +153,7 @@ def init() -> bool:
         data=mesh.indices, target=GL.GL_ELEMENT_ARRAY_BUFFER
     )
     GL.glUseProgram(prog_vct)
-    vao = _make_obj_vao(prog=prog_vct, vp=vbo_v, vn=vbo_n, vt=vbo_t)
+    vao: int = _make_obj_vao(prog=prog_vct, vp=vbo_v, vn=vbo_n, vt=vbo_t)
     GL.glBindVertexArray(vao)
     GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, vbo_i)
     # sponza.mtl: 24 of the 25 materials carry a map_Kd; the C loads them
@@ -168,25 +168,25 @@ def init() -> bool:
             )
     GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
 
-    s_pos = (
+    s_pos: np.ndarray = (
         sphere.vertices[sphere.indices].astype(np.float32)
         if len(sphere.indices)
         else sphere.vertices
     )
-    s_nor = (
+    s_nor: np.ndarray = (
         sphere.normals[sphere.indices].astype(np.float32)
         if len(sphere.indices)
         else sphere.normals
     )
-    s_uv = (
+    s_uv: np.ndarray = (
         sphere.texcoords[sphere.indices].astype(np.float32)
         if len(sphere.indices)
         else sphere.texcoords
     )
     vbo_sv: int = common.make_vbo(s_pos)
-    vbo_sn = common.make_vbo(s_nor)
-    vbo_st = common.make_vbo(s_uv)
-    vao_s = _make_obj_vao(prog=prog_vct, vp=vbo_sv, vn=vbo_sn, vt=vbo_st)
+    vbo_sn: int = common.make_vbo(s_nor)
+    vbo_st: int = common.make_vbo(s_uv)
+    vao_s: int = _make_obj_vao(prog=prog_vct, vp=vbo_sv, vn=vbo_sn, vt=vbo_st)
 
     model: np.ndarray = common.scale_m(
         x=SPONZA_SCALE, y=SPONZA_SCALE, z=SPONZA_SCALE
@@ -263,12 +263,12 @@ def update(dt: float) -> bool:
         state["total_time"] += dt
     yaw_r: float = math.radians(ui["yaw"])
     pitch_r: float = math.radians(ui["pitch"])
-    fwd = (
+    fwd: tuple[float, float, float] = (
         math.sin(yaw_r) * math.cos(pitch_r),
         math.sin(pitch_r),
         -math.cos(yaw_r) * math.cos(pitch_r),
     )
-    eye = ui["eye"]
+    eye: list[float] = ui["eye"]
     view: np.ndarray = common.look_at(
         eye=eye,
         center=[eye[0] + fwd[0], eye[1] + fwd[1], eye[2] + fwd[2]],
@@ -281,17 +281,17 @@ def update(dt: float) -> bool:
     vp: np.ndarray = proj @ view
     mvp: np.ndarray = vp @ state["model"]
 
-    a = state["total_time"] * 2.0 * math.pi / SPHERE_ORBIT_PERIOD
+    a: float = state["total_time"] * 2.0 * math.pi / SPHERE_ORBIT_PERIOD
     sphere_model: np.ndarray = common.translate(
         x=SPHERE_ORBIT_RADIUS * math.cos(a),
         y=SPHERE_ORBIT_Y,
         z=SPHERE_ORBIT_RADIUS * math.sin(a),
     )
-    sphere_mvp = vp @ sphere_model
+    sphere_mvp: np.ndarray = vp @ sphere_model
 
     # Voxelize
     GL.glMemoryBarrier(
-        GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+        GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT  # ty: ignore[unsupported-operator]
         | GL.GL_TEXTURE_UPDATE_BARRIER_BIT
         | GL.GL_TEXTURE_FETCH_BARRIER_BIT
     )
@@ -343,7 +343,7 @@ def update(dt: float) -> bool:
         0, 0, 0, GL.GL_TRUE, 0, GL.GL_WRITE_ONLY, GL.GL_RGBA16F
     )
     GL.glMemoryBarrier(
-        GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL.GL_TEXTURE_FETCH_BARRIER_BIT
+        GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL.GL_TEXTURE_FETCH_BARRIER_BIT  # ty: ignore[unsupported-operator]
     )
     # C: bind the grid on the active unit before building its mip chain (the
     # material loop above left unit 1 active, which holds no 3D texture).
@@ -356,7 +356,7 @@ def update(dt: float) -> bool:
     GL.glEnable(GL.GL_DEPTH_TEST)
     GL.glEnable(GL.GL_CULL_FACE)
     GL.glViewport(0, 0, w, h)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog_vct"])
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_3D, state["voxel_grid"])

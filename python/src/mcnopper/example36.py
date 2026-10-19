@@ -15,7 +15,7 @@ from mcnopper.common import GL
 
 SCREEN_WIDTH: int = 1024
 SCREEN_HEIGHT: int = 768
-MAX_NODES = 8 * SCREEN_WIDTH * SCREEN_HEIGHT
+MAX_NODES: int = 8 * SCREEN_WIDTH * SCREEN_HEIGHT
 state: dict = {}
 ui: dict = {"angle": 0.0, "auto_rotate": True}
 
@@ -94,7 +94,7 @@ def init() -> bool:
     vao: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(prog=prog, vao=vao, vbo=vbo_v, name="a_vertex", size=4)
     common.attach_attrib(prog=prog, vao=vao, vbo=vbo_n, name="a_normal", size=3)
     GL.glUniform4f(
@@ -207,7 +207,7 @@ def update(dt: float) -> bool:
 
     GL.glDrawArrays(GL.GL_TRIANGLES, 0, state["count"])
     GL.glMemoryBarrier(
-        GL.GL_SHADER_STORAGE_BARRIER_BIT | GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+        GL.GL_SHADER_STORAGE_BARRIER_BIT | GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT  # ty: ignore[unsupported-operator]
     )
 
     GL.glUseProgram(state["prog_blend"])

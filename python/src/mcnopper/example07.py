@@ -8,6 +8,7 @@ generator already provides tangent/bitangent/normal vectors.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 
@@ -29,7 +30,7 @@ def init() -> bool:
 
     vao: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao)
-    bufs = {
+    bufs: dict[str, tuple[int, int, str]] = {
         "v": (common.make_vbo(plane.vertices), 4, "a_vertex"),
         "tan": (common.make_vbo(plane.tangents), 3, "a_tangent"),
         "bit": (common.make_vbo(plane.bitangents), 3, "a_bitangent"),
@@ -109,7 +110,7 @@ def update(dt: float) -> bool:
     ld: np.ndarray = np.array(
         [2.0 * math.cos(ui["phase"]), 1.0, 1.0], dtype=np.float32
     )
-    n = np.linalg.norm(ld)
+    n: np.floating[Any] = np.linalg.norm(ld)
     if n > 1e-8:
         ld = ld / n
     view_ld: np.ndarray = state["view"][:3, :3] @ ld

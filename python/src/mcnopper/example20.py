@@ -7,6 +7,8 @@ texcoord matrix is animated so the pattern rotates CW.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from mcnopper import common
@@ -88,7 +90,7 @@ def _init_obj() -> dict:
 
 
 def init() -> bool:
-    obj = _init_obj()
+    obj: dict[str, Any] = _init_obj()
     plane: common.Shape = common.make_plane(2.0)
     prog: int = common.compile_program_files(
         script_file=__file__, vert="checker.vert.glsl", frag="checker.frag.glsl"
@@ -151,9 +153,9 @@ def update(dt: float) -> bool:
         ui["angle"] = (ui["angle"] + 15.0 * dt) % 360.0
         ui["obj_angle"] = (ui["obj_angle"] + 30.0 * dt) % 360.0
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
-    obj = state["obj"]
+    obj: dict[str, Any] = state["obj"]
     GL.glUseProgram(obj["prog"])
     model_obj: np.ndarray = common.translate(
         x=0, y=-1.5, z=0
@@ -170,7 +172,7 @@ def update(dt: float) -> bool:
     GL.glUseProgram(state["prog"])
     plane_mv: np.ndarray = state["view"] @ common.translate(x=0, y=0, z=4)
     common.upload_matrix(loc=state["mv_loc"], m=plane_mv)
-    a = np.radians(ui["angle"])
+    a: float = np.radians(ui["angle"])
     rot2: np.ndarray = np.array(
         [[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]], dtype=np.float32
     )

@@ -8,6 +8,8 @@ the "draw" pass samples the front-buffer texture and renders sprites.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from mcnopper import common
@@ -51,7 +53,7 @@ def _make_position_texture() -> int:
 
 
 def init() -> bool:
-    n = PARTICLE_TEXTURE_WIDTH
+    n: int = PARTICLE_TEXTURE_WIDTH
     points: np.ndarray = np.zeros((n * n, 2), dtype=np.float32)
     for y in range(n):
         for x in range(n):
@@ -74,8 +76,8 @@ def init() -> bool:
         min_filter=GL.GL_LINEAR,
     )
 
-    pos_tex = [_make_position_texture(), _make_position_texture()]
-    fbos = GL.glGenFramebuffers(2)
+    pos_tex: list[int] = [_make_position_texture(), _make_position_texture()]
+    fbos: Any = GL.glGenFramebuffers(2)
     fbos = list(fbos) if hasattr(fbos, "__iter__") else [fbos]
     for fbo, tex in zip(fbos, pos_tex):
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo)
@@ -145,7 +147,7 @@ def reshape(w: int, h: int) -> None:
 
 
 def update(dt: float) -> bool:
-    flip = state["flip"]
+    flip: int = state["flip"]
 
     GL.glUseProgram(state["prog_update"])
     GL.glUniform1f(state["time_loc"], dt)

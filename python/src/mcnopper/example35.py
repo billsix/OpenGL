@@ -63,7 +63,7 @@ def init() -> bool:
         GL.GL_TEXTURE_2D_ARRAY, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE
     )
 
-    depth_tex = []
+    depth_tex: list[int] = []
     for _ in range(2):
         t: int = GL.glGenTextures(1)
         GL.glBindTexture(GL.GL_TEXTURE_2D, t)
@@ -106,7 +106,7 @@ def init() -> bool:
     vao: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(prog=prog, vao=vao, vbo=vbo_v, name="a_vertex", size=4)
     common.attach_attrib(prog=prog, vao=vao, vbo=vbo_n, name="a_normal", size=3)
     bias: np.ndarray = np.array(
@@ -217,8 +217,8 @@ def update(dt: float) -> bool:
 
     for peel_layer in range(LAYERS):
         GL.glUniform1i(state["layer_loc"], peel_layer)
-        peel_depth = peel_layer % 2
-        default_depth = (peel_layer + 1) % 2
+        peel_depth: int = peel_layer % 2
+        default_depth: int = (peel_layer + 1) % 2
         GL.glActiveTexture(GL.GL_TEXTURE1)
         GL.glBindTexture(GL.GL_TEXTURE_2D, state["depth_tex"][peel_depth])
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, state["fbo"])
@@ -236,7 +236,7 @@ def update(dt: float) -> bool:
             state["depth_tex"][default_depth],
             0,
         )
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, state["count"])
 
     GL.glActiveTexture(GL.GL_TEXTURE0)

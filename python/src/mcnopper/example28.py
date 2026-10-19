@@ -10,6 +10,7 @@ pass combines color * (1-ssao) into the framebuffer.
 from __future__ import annotations
 
 import numpy as np
+from OpenGL.constant import Constant
 
 from mcnopper import common
 from mcnopper.common import GL
@@ -20,11 +21,14 @@ ROTATION_NOISE_SIDE: int = 4
 TEXTURE_WIDTH: int = 640  # the C's G-buffer is the window size
 TEXTURE_HEIGHT: int = 480
 state: dict = {}
-ui = {"no_ssao": False}
+ui: dict[str, bool] = {"no_ssao": False}
 
 
 def _make_color_attachment(
-    w: int, h: int, fmt=GL.GL_RGB8, internal_fmt=None
+    w: int,
+    h: int,
+    fmt: int | Constant = GL.GL_RGB8,
+    internal_fmt: int | Constant | None = None,
 ) -> int:
     if internal_fmt is None:
         internal_fmt = fmt
@@ -88,7 +92,7 @@ def init() -> bool:
     floor_tex: int = common.upload_tga_2d(common.find_media("wood_texture.tga"))
 
     # SSAO kernel
-    rng = np.random.default_rng(0)
+    rng: np.random.Generator = np.random.default_rng(0)
     kernel: np.ndarray = np.zeros((KERNEL_SIZE, 3), dtype=np.float32)
     for i in range(KERNEL_SIZE):
         v: np.ndarray = np.array(
@@ -96,7 +100,7 @@ def init() -> bool:
             dtype=np.float32,
         )
         v /= max(np.linalg.norm(v), 1e-8)
-        scale = (i / KERNEL_SIZE) ** 2
+        scale: float = (i / KERNEL_SIZE) ** 2
         scale = max(0.1, min(1.0, scale))
         kernel[i] = v * scale
 
@@ -133,13 +137,13 @@ def init() -> bool:
     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_REPEAT)
     GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_REPEAT)
 
-    color_tex = _make_color_attachment(
+    color_tex: int = _make_color_attachment(
         w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT, fmt=GL.GL_RGB8
     )
-    normal_tex = _make_color_attachment(
+    normal_tex: int = _make_color_attachment(
         w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT, fmt=GL.GL_RGB8
     )
-    depth_tex = _make_color_attachment(
+    depth_tex: int = _make_color_attachment(
         w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT, internal_fmt=GL.GL_DEPTH_COMPONENT32F
     )
     fbo: int = GL.glGenFramebuffers(1)
@@ -166,7 +170,7 @@ def init() -> bool:
         0,
     )
 
-    blur_tex = _make_color_attachment(
+    blur_tex: int = _make_color_attachment(
         w=TEXTURE_WIDTH, h=TEXTURE_HEIGHT, fmt=GL.GL_RGB8
     )
     fbo_blur: int = GL.glGenFramebuffers(1)
@@ -208,7 +212,7 @@ def init() -> bool:
     vao_obj: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao_obj)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(
         prog=prog_phong, vao=vao_obj, vbo=vbo_v, name="a_vertex", size=4
     )
@@ -380,7 +384,7 @@ def update(dt: float) -> bool:
         n=2, bufs=[GL.GL_COLOR_ATTACHMENT0, GL.GL_COLOR_ATTACHMENT1]
     )
     GL.glViewport(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     # 3 teapots
     GL.glUseProgram(state["prog_phong"])
@@ -431,7 +435,7 @@ def update(dt: float) -> bool:
     # Blur to screen
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
     GL.glViewport(0, 0, w, h)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_2D, state["color_tex"])
     GL.glActiveTexture(GL.GL_TEXTURE1)

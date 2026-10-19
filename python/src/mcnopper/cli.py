@@ -26,27 +26,27 @@ def main(argv: list[str] | None = None) -> int:
     try:
         n: int = int(args[0])
     except ValueError:
-        print(f"unrecognised argument: {args[0]!r}", file=sys.stderr)
+        print(f"unrecognised argument: {args[0]!r}", file=sys.stderr)  # noqa: T201
         _print_help()
         return 2
     if not 1 <= n <= demo_count:
-        print(f"demo number must be 1..{demo_count}, got {n}", file=sys.stderr)
+        print(f"demo number must be 1..{demo_count}, got {n}", file=sys.stderr)  # noqa: T201
         return 2
     run(n)
     return 0
 
 
 def _print_help() -> None:
-    print("Usage:")
-    print("  mcnopper              # show this help")
-    print(f"  mcnopper list         # list all {demo_count} demos")
-    print(f"  mcnopper <N>          # run demo number N (1..{demo_count})")
+    print("Usage:")  # noqa: T201
+    print("  mcnopper              # show this help")  # noqa: T201
+    print(f"  mcnopper list         # list all {demo_count} demos")  # noqa: T201
+    print(f"  mcnopper <N>          # run demo number N (1..{demo_count})")  # noqa: T201
 
 
 def _print_list() -> None:
     titles: dict[int, str] = demo_titles()
     for n in sorted(titles):
-        print(f"  {n:2d}  {titles[n]}")
+        print(f"  {n:2d}  {titles[n]}")  # noqa: T201
 
 
 if __name__ == "__main__":

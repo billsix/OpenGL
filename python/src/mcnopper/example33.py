@@ -10,6 +10,7 @@ realtime split-sum IBL.
 from __future__ import annotations
 
 import numpy as np
+from OpenGL.constant import Constant
 
 from mcnopper import common
 from mcnopper.common import GL
@@ -32,12 +33,12 @@ ui: dict = {
 }
 
 
-def _make_cubemap(size: int, fmt=GL.GL_RGB32F) -> int:
+def _make_cubemap(size: int, fmt: int | Constant = GL.GL_RGB32F) -> int:
     tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, tex)
     for face in range(6):
         GL.glTexImage2D(
-            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,  # ty: ignore[unsupported-operator]
             0,
             fmt,
             size,
@@ -96,7 +97,7 @@ def _make_cubemap_array(size: int, layers: int) -> int:
 
 
 def init() -> bool:
-    print("[Example 33] Generating prefiltered IBL textures (~5s)...")
+    print("[Example 33] Generating prefiltered IBL textures (~5s)...")  # noqa: T201
     panorama: int = common.upload_hdr_2d(common.find_media("doge2.hdr"))
     GL.glBindTexture(GL.GL_TEXTURE_2D, panorama)
     GL.glTexParameteri(
@@ -142,8 +143,10 @@ def init() -> bool:
     )
 
     # Output textures
-    spec_tex = _make_cubemap_array(size=SPEC_SIZE, layers=6 * NUMBER_ROUGHNESS)
-    diff_tex = _make_cubemap(DIFF_SIZE)
+    spec_tex: int = _make_cubemap_array(
+        size=SPEC_SIZE, layers=6 * NUMBER_ROUGHNESS
+    )
+    diff_tex: int = _make_cubemap(DIFF_SIZE)
     lut_tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_2D, lut_tex)
     GL.glTexImage2D(
@@ -165,7 +168,7 @@ def init() -> bool:
     GL.glTexParameteri(
         GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE
     )
-    bg_tex = _make_cubemap(BG_SIZE)
+    bg_tex: int = _make_cubemap(BG_SIZE)
 
     # Prefilter quad VAO
     quad_vbo: int = common.make_vbo(
@@ -197,7 +200,7 @@ def init() -> bool:
     )
     GL.glViewport(0, 0, SPEC_SIZE, SPEC_SIZE)
     for k in range(NUMBER_ROUGHNESS):
-        r = k / max(NUMBER_ROUGHNESS - 1, 1)
+        r: float = k / max(NUMBER_ROUGHNESS - 1, 1)
         GL.glUniform1f(
             common.uniform(prog=prog_spec_pre, name="u_roughness"), r
         )
@@ -224,7 +227,7 @@ def init() -> bool:
         GL.glFramebufferTexture2D(
             GL.GL_FRAMEBUFFER,
             GL.GL_COLOR_ATTACHMENT0,
-            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,  # ty: ignore[unsupported-operator]
             diff_tex,
             0,
         )
@@ -247,7 +250,7 @@ def init() -> bool:
         GL.glFramebufferTexture2D(
             GL.GL_FRAMEBUFFER,
             GL.GL_COLOR_ATTACHMENT0,
-            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,  # ty: ignore[unsupported-operator]
             bg_tex,
             0,
         )
@@ -258,7 +261,7 @@ def init() -> bool:
     GL.glDeleteFramebuffers(1, [pre_fbo])
     GL.glDeleteVertexArrays(1, [quad_vao])
     GL.glDeleteTextures(size=1, array=[panorama])
-    print("[Example 33] IBL prefilter done.")
+    print("[Example 33] IBL prefilter done.")  # noqa: T201
 
     # Main scene
     full_tex: int = GL.glGenTextures(1)
@@ -306,7 +309,7 @@ def init() -> bool:
     vao_m: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao_m)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(
         prog=prog_brdf, vao=vao_m, vbo=vbo_v, name="a_vertex", size=4
     )
@@ -405,7 +408,7 @@ def update(dt: float) -> bool:
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, state["full_fbo"])
     GL.glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
     GL.glEnable(GL.GL_MULTISAMPLE)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     GL.glFrontFace(GL.GL_CW)
     GL.glUseProgram(state["prog_bg"])
@@ -430,7 +433,7 @@ def update(dt: float) -> bool:
     GL.glDisable(GL.GL_MULTISAMPLE)
     GL.glDisable(GL.GL_DEPTH_TEST)
     GL.glViewport(0, 0, w, h)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_2D_MULTISAMPLE, state["full_tex"])
     GL.glUseProgram(state["prog_full"])

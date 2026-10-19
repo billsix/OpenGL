@@ -27,7 +27,7 @@ def init() -> bool:
     mesh: common.ObjMesh = common.load_obj(common.find_media("bunny.obj"))
     pos: np.ndarray = mesh.positions[mesh.indices].astype(np.float32)
     nor: np.ndarray = mesh.normals[mesh.indices].astype(np.float32)
-    uv = _texgen_axes(positions=pos, s_x=2.0, t_y=2.0)
+    uv: np.ndarray = _texgen_axes(positions=pos, s_x=2.0, t_y=2.0)
 
     prog: int = common.compile_program_files(
         script_file=__file__,
@@ -178,7 +178,7 @@ def reshape(w: int, h: int) -> None:
 
 
 def update(dt: float) -> bool:
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_2D, state["color"])
     GL.glActiveTexture(GL.GL_TEXTURE1)

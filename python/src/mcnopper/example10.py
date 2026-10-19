@@ -77,7 +77,7 @@ def reshape(w: int, h: int) -> None:
 
 
 def update(dt: float) -> bool:
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
     GL.glBindVertexArray(state["vao"])
     GL.glDrawElements(

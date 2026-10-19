@@ -14,8 +14,10 @@ the C version drove from keyboard.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
+from OpenGL.constant import Constant
 
 from mcnopper import common
 from mcnopper.common import GL
@@ -44,8 +46,12 @@ def _load_rect(path: str) -> tuple[int, int, int]:
     tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_RECTANGLE, tex)
     GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-    fmt = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[img.channels]
-    internal = {1: GL.GL_R8, 3: GL.GL_RGB8, 4: GL.GL_RGBA8}[img.channels]
+    fmt: int | Constant = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[
+        img.channels
+    ]
+    internal: int | Constant = {1: GL.GL_R8, 3: GL.GL_RGB8, 4: GL.GL_RGBA8}[
+        img.channels
+    ]
     GL.glTexImage2D(
         GL.GL_TEXTURE_RECTANGLE,
         0,
@@ -80,8 +86,8 @@ def init() -> bool:
 
     s_max: int = int(math.floor(math.log(sw, 2)))
     t_max: int = int(math.floor(math.log(sh, 2)))
-    overall_max = min(s_max, t_max)
-    detail_step = 2 ** (overall_max - MINIMUM_DETAIL_LEVEL)
+    overall_max: int = min(s_max, t_max)
+    detail_step: int = 2 ** (overall_max - MINIMUM_DETAIL_LEVEL)
     s_n: int = int(math.ceil(sw / detail_step)) - 1
     t_n: int = int(math.ceil(sh / detail_step)) - 1
 
@@ -126,7 +132,7 @@ def init() -> bool:
     # Pass-two scratch buffer (transform feedback target)
     vbo_two: int = GL.glGenBuffers(1)
     GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo_two)
-    capacity = s_n * t_n * (4 ** (DETAIL_LEVEL_FIRST_PASS + 1)) * 2
+    capacity: int = s_n * t_n * (4 ** (DETAIL_LEVEL_FIRST_PASS + 1)) * 2
     GL.glBufferData(
         target=GL.GL_ARRAY_BUFFER,
         size=capacity * 4,
@@ -194,8 +200,8 @@ def init() -> bool:
     GL.glEnableVertexAttribArray(0)
 
     # World <-> texture matrices
-    h = HORIZONTAL_PIXEL_SPACING * METERS_TO_VIRTUAL_WORLD_SCALE
-    v = VERTICAL_PIXEL_RANGE * METERS_TO_VIRTUAL_WORLD_SCALE
+    h: float = HORIZONTAL_PIXEL_SPACING * METERS_TO_VIRTUAL_WORLD_SCALE
+    v: float = VERTICAL_PIXEL_RANGE * METERS_TO_VIRTUAL_WORLD_SCALE
     tex_to_world: np.ndarray = np.array(
         [
             [h, 0, 0, -sw / 2.0 * h],
@@ -215,7 +221,7 @@ def init() -> bool:
 
     # PyOpenGL returns a 1-element array from glGenQueries(1); glBeginQuery
     # wants a scalar int.
-    _qarr = GL.glGenQueries(1)
+    _qarr: Any = GL.glGenQueries(1)
     query: int = int(_qarr[0]) if hasattr(_qarr, "__len__") else int(_qarr)
 
     GL.glClearColor(0, 0, 0, 0)
@@ -261,7 +267,7 @@ def init() -> bool:
 def reshape(w: int, h: int) -> None:
     state["w"], state["h"] = w, h
     GL.glViewport(0, 0, w, h)
-    fov = 40.0 if ui["top_view"] else 60.0
+    fov: float = 40.0 if ui["top_view"] else 60.0
     state["proj"] = common.perspective(
         fovy_deg=fov, aspect=w / max(h, 1), near=1.0, far=1_000_000.0
     )
@@ -270,7 +276,7 @@ def reshape(w: int, h: int) -> None:
 def update(dt: float) -> bool:
     if ui["animate"]:
         ui["angle"] += dt
-    a = 2.0 * math.pi * ui["angle"] / TURN_DURATION
+    a: float = 2.0 * math.pi * ui["angle"] / TURN_DURATION
     cam_pos: np.ndarray = np.array(
         [
             -math.cos(a) * TURN_RADIUS * METERS_TO_VIRTUAL_WORLD_SCALE,
@@ -305,8 +311,13 @@ def update(dt: float) -> bool:
         [cam_pos[0], 0.0, cam_pos[2], 1.0], dtype=np.float32
     )
     pos_tex: np.ndarray = state["world_to_tex"] @ xz
-    dir_tex: np.ndarray = state["world_to_tex"][:3, :3] @ cam_dir
-    fov_h = (60.0 * (state.get("w", 1) / max(state.get("h", 1), 1))) / 2.0
+    # dir_tex: texture-space camera direction, kept for parity; not sampled.
+    dir_tex: np.ndarray = (  # noqa: F841
+        state["world_to_tex"][:3, :3] @ cam_dir
+    )
+    fov_h: float = (
+        60.0 * (state.get("w", 1) / max(state.get("h", 1), 1))
+    ) / 2.0
     rot_l: np.ndarray = common.rotate_y(fov_h + 90.0)
     rot_r: np.ndarray = common.rotate_y(-fov_h - 90.0)
     rot_b: np.ndarray = common.rotate_y(180.0)
@@ -323,7 +334,7 @@ def update(dt: float) -> bool:
     GL.glPolygonMode(
         GL.GL_FRONT_AND_BACK, GL.GL_LINE if ui["wireframe"] else GL.GL_FILL
     )
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     # Pass one: cull + expand into transform-feedback buffer
     GL.glEnable(GL.GL_RASTERIZER_DISCARD)

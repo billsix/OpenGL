@@ -27,6 +27,7 @@ import re
 from typing import Any
 
 import numpy as np
+from OpenGL.constant import Constant
 
 from mcnopper import common, gltf
 from mcnopper.common import GL
@@ -84,7 +85,9 @@ def _inject_defines(src: str, stride: int, degree: int | None) -> str:
     the port's copies carry a provenance comment above it, so anchor on the
     directive itself.
     """
-    m: re.Match | None = re.search(r"^#version[^\n]*\n", src, flags=re.MULTILINE)
+    m: re.Match | None = re.search(
+        r"^#version[^\n]*\n", src, flags=re.MULTILINE
+    )
     if m is None:
         raise ValueError("shader has no #version line")
     define: str = f"#define SPLAT_STRIDE {stride}u\n"
@@ -154,7 +157,12 @@ def _load_splats() -> dict:
     }
 
 
-def _make_ssbo(binding: int, nbytes: int, data=None, usage=None) -> int:
+def _make_ssbo(
+    binding: int,
+    nbytes: int,
+    data: np.ndarray | None = None,
+    usage: int | Constant | None = None,
+) -> int:
     buf: int = GL.glGenBuffers(1)
     GL.glBindBuffer(GL.GL_SHADER_STORAGE_BUFFER, buf)
     GL.glBufferData(
@@ -168,14 +176,14 @@ def _make_ssbo(binding: int, nbytes: int, data=None, usage=None) -> int:
 
 
 def init() -> bool:
-    print("[Example 52] Loading splats...")
+    print("[Example 52] Loading splats...")  # noqa: T201
     splats: dict = _load_splats()
     count: int = splats["count"]
     padded: int = max(_next_power_of_two(count), SORT_LOCAL_SIZE)
     stride: int = splats["stride"]
     degree: int = splats["degree"]
     world: np.ndarray = splats["world"]
-    print(
+    print(  # noqa: T201
         f"[Example 52] SH degree {degree}, stride {stride} floats, "
         f"{count} splats (padded {padded})."
     )
@@ -266,7 +274,7 @@ def init() -> bool:
         sort_j=common.uniform(prog=prog_sort, name="u_j"),
         sort_k=common.uniform(prog=prog_sort, name="u_k"),
     )
-    print("[Example 52] Ready.")
+    print("[Example 52] Ready.")  # noqa: T201
     return True
 
 

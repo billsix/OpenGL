@@ -534,7 +534,7 @@ def _animation(gltf: GLTF2, blobs: list[bytes], ga: Any) -> Animation:
         if ch.target.node is None or ch.sampler is None:
             continue
         if path not in _PATH_COMPONENTS:
-            print(
+            print(  # noqa: T201
                 f"[_gltf] animation {ga.name!r}: skipping unsupported "
                 f"channel path {path!r} (morph targets are not ported)"
             )
@@ -550,7 +550,7 @@ def _animation(gltf: GLTF2, blobs: list[bytes], ga: Any) -> Animation:
         comps: int = _PATH_COMPONENTS[path]
         per_key: int = 3 if interp == "CUBICSPLINE" else 1
         if len(times) == 0 or values.shape[0] < len(times) * per_key:
-            print(
+            print(  # noqa: T201
                 f"[_gltf] animation {ga.name!r}: channel for node "
                 f"{ch.target.node} has too few sampler outputs; skipping"
             )
@@ -598,7 +598,7 @@ def _primitive(
     if positions is None:
         raise ValueError("primitive without POSITION")
     if gp.targets:
-        print("[_gltf] primitive has morph targets; they are not ported")
+        print("[_gltf] primitive has morph targets; they are not ported")  # noqa: T201
     indices: np.ndarray | None = (
         _decode_accessor(gltf=gltf, blobs=blobs, accessor_index=gp.indices)
         .astype(np.uint32)
@@ -653,7 +653,7 @@ def load_node_graph(gltf: GLTF2) -> Scene:
     scene: Scene = Scene()
     scene.nodes = [_node(gn) for gn in gltf.nodes]
     scene.roots = (
-        list(gltf.scenes[gltf.scene or 0].nodes)
+        list(gltf.scenes[gltf.scene or 0].nodes or [])
         if gltf.scenes
         else list(range(len(gltf.nodes)))
     )
@@ -680,7 +680,7 @@ def load_scene(path: str) -> Scene:
     ]
     scene.nodes = [_node(gn) for gn in gltf.nodes]
     scene.roots = (
-        list(gltf.scenes[gltf.scene or 0].nodes)
+        list(gltf.scenes[gltf.scene or 0].nodes or [])
         if gltf.scenes
         else list(range(len(gltf.nodes)))
     )
@@ -723,24 +723,24 @@ def _summarize(path: str) -> None:
             for p in scene.primitives
         ]
     )
-    print(f"{path}")
-    print(
+    print(f"{path}")  # noqa: T201
+    print(  # noqa: T201
         f"  primitives: {len(scene.primitives)}  materials: "
         f"{len(scene.materials)}  nodes: {len(scene.nodes)}  skins: "
         f"{len(scene.skins)}  animations: {len(scene.animations)}"
     )
-    print(f"  vertices: {total_v}  indices: {total_i}")
-    print(f"  world bbox min: {allpos.min(axis=0)}  max: {allpos.max(axis=0)}")
+    print(f"  vertices: {total_v}  indices: {total_i}")  # noqa: T201
+    print(f"  world bbox min: {allpos.min(axis=0)}  max: {allpos.max(axis=0)}")  # noqa: T201
     for s in scene.skins:
-        print(f"  skin: {len(s.joints)} joints")
+        print(f"  skin: {len(s.joints)} joints")  # noqa: T201
     for a in scene.animations:
-        print(
+        print(  # noqa: T201
             f"  animation {a.name!r}: {len(a.channels)} channels, "
             f"{a.start:.3f}..{a.end:.3f}s"
         )
     if scene.animations:
         update_animation(scene=scene, dt=0.5)
-        print("  stepped animation 0.5s: ok")
+        print("  stepped animation 0.5s: ok")  # noqa: T201
 
 
 if __name__ == "__main__":

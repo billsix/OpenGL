@@ -7,6 +7,8 @@ imgui panel for the rotation angles and light direction.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from mcnopper import common
@@ -66,7 +68,7 @@ def update(dt: float) -> bool:
     if ui["auto_rotate"]:
         ui["rot_y"] = (ui["rot_y"] + 30.0 * dt) % 360.0
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
 
     model: np.ndarray = common.rotate_x(ui["rot_x"]) @ common.rotate_y(
@@ -83,7 +85,7 @@ def update(dt: float) -> bool:
     common.upload_matrix3(loc=state["normal_loc"], m=model[:3, :3])
 
     ld: np.ndarray = np.asarray(ui["light_dir"], dtype=np.float32)
-    n = np.linalg.norm(ld)
+    n: np.floating[Any] = np.linalg.norm(ld)
     if n > 1e-8:
         ld = ld / n
     GL.glUniform3f(state["light_loc"], *ld)

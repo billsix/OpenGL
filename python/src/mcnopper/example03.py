@@ -8,6 +8,7 @@ P * V * M derivation but updates it on every reshape.
 from __future__ import annotations
 
 import numpy as np
+from OpenGL.constant import Constant
 
 from mcnopper import common
 from mcnopper.common import GL
@@ -43,7 +44,9 @@ def init() -> bool:
     tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_2D, tex)
     GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-    fmt = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[img.channels]
+    fmt: int | Constant = {1: GL.GL_RED, 3: GL.GL_RGB, 4: GL.GL_RGBA}[
+        img.channels
+    ]
     GL.glTexImage2D(
         GL.GL_TEXTURE_2D,
         0,

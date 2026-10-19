@@ -32,7 +32,7 @@ ui: dict = {
 
 
 def _shuffled_colors(rng: np.random.Generator) -> np.ndarray:
-    n = GRID_N
+    n: int = GRID_N
     out: np.ndarray = np.zeros((n, n, n, 4), dtype=np.uint8)
     for z in range(n):
         for y in range(n):
@@ -43,8 +43,8 @@ def _shuffled_colors(rng: np.random.Generator) -> np.ndarray:
                     z * 255 // (n - 1),
                     255,
                 )
-    flat = out.reshape(-1, 4)
-    perm = rng.permutation(len(flat))
+    flat: np.ndarray = out.reshape(-1, 4)
+    perm: np.ndarray = rng.permutation(len(flat))
     flat = flat[perm].copy()
     return flat.reshape(n, n, n, 4)
 
@@ -56,20 +56,22 @@ def _inject_grid_n(src: str) -> str:
     the port's copy carries a provenance comment above it, so find the
     line instead of assuming its position.
     """
-    m: re.Match | None = re.search(r"^#version[^\n]*\n", src, flags=re.MULTILINE)
+    m: re.Match | None = re.search(
+        r"^#version[^\n]*\n", src, flags=re.MULTILINE
+    )
     if m is None:
         raise ValueError("shader has no #version line")
     return src[: m.end()] + f"#define GRID_N {GRID_N}\n" + src[m.end() :]
 
 
 def init() -> bool:
-    rng = np.random.default_rng(42)
+    rng: np.random.Generator = np.random.default_rng(42)
 
     sort_src_path: str = common.find_shader(
         script_file=__file__, filename="sort.comp.glsl"
     )
     with open(sort_src_path) as f:
-        sort_src = _inject_grid_n(f.read())
+        sort_src: str = _inject_grid_n(f.read())
     prog_sort: int = common.compile_program(comp_src=sort_src)
     prog_render: int = common.compile_program_files(
         script_file=__file__, vert="render.vert.glsl", frag="render.frag.glsl"
@@ -80,7 +82,7 @@ def init() -> bool:
     GL.glUniform1f(common.uniform(prog=prog_render, name="u_pointSize"), 8.0)
     GL.glUniform1i(common.uniform(prog=prog_render, name="u_colorTexture"), 0)
 
-    color_data = _shuffled_colors(rng)
+    color_data: np.ndarray = _shuffled_colors(rng)
     color_tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_3D, color_tex)
     GL.glTexImage3D(
@@ -129,7 +131,7 @@ def reshape(w: int, h: int) -> None:
 
 def update(dt: float) -> bool:
     ui["orbit_angle"] = (ui["orbit_angle"] + ORBIT_SPEED * dt) % 360.0
-    total_steps = GRID_N * 3
+    total_steps: int = GRID_N * 3
 
     if ui["sorting"]:
         steps_this_frame: int = 0
@@ -156,7 +158,7 @@ def update(dt: float) -> bool:
                 if ui["sort_step"] >= total_steps:
                     ui["sorting"] = False
                     break
-                axis = ui["sort_step"] % 3
+                axis: int = ui["sort_step"] % 3
                 for p in range(GRID_N):
                     GL.glUniform1i(state["axis_loc"], axis)
                     GL.glUniform1i(state["pass_loc"], p)
@@ -168,7 +170,7 @@ def update(dt: float) -> bool:
             )
 
     GL.glMemoryBarrier(GL.GL_TEXTURE_FETCH_BARRIER_BIT)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     rad: float = math.radians(ui["orbit_angle"])
     eye_x: float = math.sin(rad) * 3.5
@@ -196,7 +198,7 @@ def panel() -> None:
     from imgui_bundle import imgui
 
     if imgui.button("reshuffle"):
-        data = _shuffled_colors(state["rng"])
+        data: np.ndarray = _shuffled_colors(state["rng"])
         GL.glBindTexture(GL.GL_TEXTURE_3D, state["color_tex"])
         GL.glTexSubImage3D(
             GL.GL_TEXTURE_3D,

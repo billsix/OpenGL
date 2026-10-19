@@ -20,8 +20,8 @@ Or programmatically::
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
-__all__ = ["demo_count", "demo_titles", "run"]
+__version__: str = "0.1.0"
+__all__: list[str] = ["demo_count", "demo_titles", "run"]
 
 import runpy as _runpy
 
@@ -49,9 +49,9 @@ def demo_titles() -> dict[int, str]:
             else pkg_root / f"example{n:02d}" / f"example{n:02d}.py"
         )
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-            doc = ast.get_docstring(tree) or ""
-            first = doc.strip().splitlines()
+            tree: ast.Module = ast.parse(path.read_text(encoding="utf-8"))
+            doc: str = ast.get_docstring(tree) or ""
+            first: list[str] = doc.strip().splitlines()
             titles[n] = first[0] if first else f"Example {n}"
         except Exception as e:  # noqa: BLE001
             titles[n] = f"(unreadable: {e})"
@@ -64,11 +64,11 @@ def run(n: int) -> None:
         raise ValueError(f"demo number must be 1..{demo_count}, got {n}")
     from pathlib import Path
 
-    pkg_root = Path(__file__).resolve().parent
+    pkg_root: Path = Path(__file__).resolve().parent
     # Flat module (most demos), or the exampleNN/exampleNN.py subpackage for
     # the four demos that carry co-located shaders.
     if (pkg_root / f"example{n:02d}.py").exists():
-        mod_name = f"mcnopper.example{n:02d}"
+        mod_name: str = f"mcnopper.example{n:02d}"
     else:
         mod_name = f"mcnopper.example{n:02d}.example{n:02d}"
     _runpy.run_module(mod_name, run_name="__main__")

@@ -123,7 +123,7 @@ def update(dt: float) -> bool:
     if ui["auto_rotate"]:
         ui["angle"] = (ui["angle"] + 20.0 * dt) % 360.0
 
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog"])
     common.upload_matrix(loc=state["view_loc"], m=state["view"])
 
@@ -136,7 +136,7 @@ def update(dt: float) -> bool:
     GL.glDrawElements(GL.GL_TRIANGLES, state["n_p"], GL.GL_UNSIGNED_INT, None)
 
     # Shadow projection: plane is z = -5 in world space, so (0,0,1,5) plane equation.
-    shadow_plane = (0.0, 0.0, 1.0, 5.0)
+    shadow_plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 5.0)
     sp: np.ndarray = common.planar_shadow_directional(
         plane=shadow_plane, light_dir=LIGHT_DIR
     )

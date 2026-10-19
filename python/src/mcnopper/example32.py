@@ -91,7 +91,7 @@ def init() -> bool:
     vao_m: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao_m)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(
         prog=prog_brdf, vao=vao_m, vbo=vbo_v, name="a_vertex", size=4
     )
@@ -176,7 +176,7 @@ def update(dt: float) -> bool:
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, state["fbo"])
     GL.glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
     GL.glEnable(GL.GL_MULTISAMPLE)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     # Background
     GL.glFrontFace(GL.GL_CW)
@@ -205,7 +205,7 @@ def update(dt: float) -> bool:
     GL.glDisable(GL.GL_MULTISAMPLE)
     GL.glDisable(GL.GL_DEPTH_TEST)
     GL.glViewport(0, 0, w, h)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glActiveTexture(GL.GL_TEXTURE0)
     GL.glBindTexture(GL.GL_TEXTURE_2D_MULTISAMPLE, state["full_tex"])
     GL.glUseProgram(state["prog_full"])

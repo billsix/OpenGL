@@ -37,14 +37,14 @@ def init() -> bool:
     with open(
         common.find_shader(script_file=__file__, filename="simple.vert.glsl")
     ) as f:
-        vs_src = f.read()
+        vs_src: str = f.read()
     with open(
         common.find_shader(script_file=__file__, filename="red.frag.glsl")
     ) as f:
-        fs_src = f.read()
+        fs_src: str = f.read()
 
-    vs_obj = shaders.compileShader(vs_src, GL.GL_VERTEX_SHADER)
-    fs_obj = shaders.compileShader(fs_src, GL.GL_FRAGMENT_SHADER)
+    vs_obj: int = shaders.compileShader(vs_src, GL.GL_VERTEX_SHADER)
+    fs_obj: int = shaders.compileShader(fs_src, GL.GL_FRAGMENT_SHADER)
 
     vs_prog: int = GL.glCreateProgram()
     GL.glProgramParameteri(vs_prog, GL.GL_PROGRAM_SEPARABLE, GL.GL_TRUE)

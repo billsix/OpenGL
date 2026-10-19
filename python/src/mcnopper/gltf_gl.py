@@ -253,7 +253,7 @@ def bind_material(
     the caller sets (model + normal, or the joint matrices).
     """
     for unit, tex in textures.units.items():
-        GL.glActiveTexture(GL.GL_TEXTURE0 + unit)
+        GL.glActiveTexture(GL.GL_TEXTURE0 + unit)  # ty: ignore[unsupported-operator]
         GL.glBindTexture(GL.GL_TEXTURE_2D, tex)
     GL.glUniform4f(u["u_baseColorFactor"], *mat.base_color_factor)
     GL.glUniform1f(u["u_metallicFactor"], mat.metallic_factor)

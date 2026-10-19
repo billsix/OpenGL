@@ -92,7 +92,6 @@ def init() -> bool:
         GL.GL_TEXTURE_3D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST
     )
 
-    eye = VOXEL_SIZE * 0.5
     proj: np.ndarray = common.ortho(
         left=-VOXEL_SIZE / 2,
         right=VOXEL_SIZE / 2,
@@ -102,7 +101,7 @@ def init() -> bool:
         far=VOXEL_SIZE,
     )
     view: np.ndarray = common.look_at(
-        eye=[0, 0, eye], center=[0, 0, 0], up=[0, 1, 0]
+        eye=[0, 0, VOXEL_SIZE * 0.5], center=[0, 0, 0], up=[0, 1, 0]
     )
     common.upload_matrix(
         loc=common.uniform(prog=prog, name="u_projectionMatrix"), m=proj
@@ -152,7 +151,7 @@ def update(dt: float) -> bool:
 
     GL.glColorMask(False, False, False, False)
     GL.glUseProgram(state["prog"])
-    model = (
+    model: np.ndarray = (
         common.translate(x=0, y=-200.0 * VOXEL_SIZE / WINDOW_SIZE, z=0)
         @ common.rotate_y(ui["angle"])
         @ common.scale_m(

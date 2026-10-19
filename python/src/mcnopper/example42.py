@@ -83,7 +83,7 @@ def init() -> bool:
     vao_obj: int = GL.glGenVertexArrays(1)
     GL.glBindVertexArray(vao_obj)
     vbo_v: int = common.make_vbo(pos)
-    vbo_n = common.make_vbo(nor)
+    vbo_n: int = common.make_vbo(nor)
     common.attach_attrib(
         prog=prog_phong, vao=vao_obj, vbo=vbo_v, name="a_vertex", size=4
     )
@@ -184,7 +184,7 @@ def update(dt: float) -> bool:
 
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, state["fbo"])
     GL.glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glUseProgram(state["prog_phong"])
     proj: np.ndarray = common.perspective(
         fovy_deg=40.0, aspect=SCREEN_WIDTH / SCREEN_HEIGHT, near=1.0, far=1000.0

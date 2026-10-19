@@ -21,8 +21,8 @@ LENGTH: float = 250.0
 GRAVITY: float = 9.81
 AMPLITUDE: float = 0.002
 WIND_SPEED: float = 10.0
-WIND_DIR = (1.0, 1.0)
-LPWA = WIND_SPEED * WIND_SPEED / GRAVITY
+WIND_DIR: tuple[float, float] = (1.0, 1.0)
+LPWA: float = WIND_SPEED * WIND_SPEED / GRAVITY
 state: dict = {}
 
 
@@ -35,7 +35,7 @@ def _phillips(
     k: float = math.hypot(*wave_dir)
     if largest_wave == 0 or k == 0:
         return 0.0
-    dot_wind = wave_dir[0] * wind_dir[0] + wave_dir[1] * wind_dir[1]
+    dot_wind: float = wave_dir[0] * wind_dir[0] + wave_dir[1] * wind_dir[1]
     return (
         amplitude
         * math.exp(-1.0 / (k * largest_wave) ** 2)
@@ -49,8 +49,8 @@ def _butterfly_indices(n: int) -> np.ndarray:
     bits: int = int(math.log2(n))
     out: np.ndarray = np.zeros(n, dtype=np.int32)
     for i in range(n):
-        v = i
-        r = 0
+        v: int = i
+        r: int = 0
         for _ in range(bits):
             r = (r << 1) | (v & 1)
             v >>= 1
@@ -59,17 +59,17 @@ def _butterfly_indices(n: int) -> np.ndarray:
 
 
 def init() -> bool:
-    print(f"[Example 41] Generating Phillips spectrum H0 ({N}x{N})...")
-    rng = np.random.default_rng(0)
+    print(f"[Example 41] Generating Phillips spectrum H0 ({N}x{N})...")  # noqa: T201
+    rng: np.random.Generator = np.random.default_rng(0)
     wd: np.ndarray = np.array(WIND_DIR, dtype=np.float64)
     wd /= np.linalg.norm(wd)
     h0: np.ndarray = np.zeros((N, N, 2), dtype=np.float32)
     inv_sqrt2: float = 1.0 / math.sqrt(2.0)
     for i in range(N):
-        ky = (N / 2.0 - i) * (2.0 * math.pi / LENGTH)
+        ky: float = (N / 2.0 - i) * (2.0 * math.pi / LENGTH)
         for k in range(N):
-            kx = (-N / 2.0 + k) * (2.0 * math.pi / LENGTH)
-            ph = _phillips(
+            kx: float = (-N / 2.0 + k) * (2.0 * math.pi / LENGTH)
+            ph: float = _phillips(
                 amplitude=AMPLITUDE,
                 largest_wave=LPWA,
                 wave_dir=(kx, ky),
@@ -78,7 +78,7 @@ def init() -> bool:
             h0[i, k, 0] = inv_sqrt2 * rng.normal() * ph
             h0[i, k, 1] = inv_sqrt2 * rng.normal() * ph
 
-    butterfly = _butterfly_indices(N).astype(np.float32)
+    butterfly: np.ndarray = _butterfly_indices(N).astype(np.float32)
     steps: int = int(math.log2(N))
 
     prog_ht: int = common.compile_program_files(
@@ -125,9 +125,9 @@ def init() -> bool:
         )
         return t
 
-    h0_tex = make_2d_rg32f(h0)
-    ht_tex = make_2d_rg32f()
-    disp_tex = [make_2d_rg32f(), make_2d_rg32f()]
+    h0_tex: int = make_2d_rg32f(h0)
+    ht_tex: int = make_2d_rg32f()
+    disp_tex: list[int] = [make_2d_rg32f(), make_2d_rg32f()]
     normal_tex: int = GL.glGenTextures(1)
     GL.glBindTexture(GL.GL_TEXTURE_2D, normal_tex)
     GL.glTexImage2D(
@@ -169,7 +169,7 @@ def init() -> bool:
         columns=N - 1,
     )
     rot: np.ndarray = common.rotate_x(-90.0)
-    rotated = (rot @ grid.vertices.T).T
+    rotated: np.ndarray = (rot @ grid.vertices.T).T
 
     GL.glUseProgram(prog)
     vao: int = GL.glGenVertexArrays(1)
@@ -231,7 +231,7 @@ def reshape(w: int, h: int) -> None:
 
 def update(dt: float) -> bool:
     state["total_time"] += dt
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
 
     GL.glUseProgram(state["prog_ht"])
     GL.glBindImageTexture(
@@ -296,7 +296,7 @@ def update(dt: float) -> bool:
     )
     GL.glDispatchCompute(N, N, 1)
     GL.glMemoryBarrier(
-        GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL.GL_TEXTURE_FETCH_BARRIER_BIT
+        GL.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL.GL_TEXTURE_FETCH_BARRIER_BIT  # ty: ignore[unsupported-operator]
     )
 
     GL.glUseProgram(state["prog"])

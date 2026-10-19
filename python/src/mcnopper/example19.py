@@ -8,6 +8,8 @@ is multiplied with the projected mirror sample.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from mcnopper import common
@@ -90,7 +92,7 @@ def _init_phong_obj() -> dict:
 
 
 def init() -> bool:
-    obj = _init_phong_obj()
+    obj: dict[str, Any] = _init_phong_obj()
 
     plane: common.Shape = common.make_plane(3.0)
     prog_floor: int = common.compile_program_files(
@@ -208,7 +210,7 @@ def _draw_obj(
 ) -> None:
     """C ``updateWavefront``: the phong shader takes projection and
     modelview separately, so ``proj`` is the projection alone."""
-    obj = state["obj"]
+    obj: dict[str, Any] = state["obj"]
     GL.glUseProgram(obj["prog"])
     common.upload_matrix(loc=obj["proj_loc"], m=proj)
     model: np.ndarray = (
@@ -221,7 +223,7 @@ def _draw_obj(
     common.upload_matrix3(loc=obj["nm_loc"], m=mv[:3, :3])
     light: np.ndarray = np.array([1, 1, 1], dtype=np.float32)
     light /= np.linalg.norm(light)
-    light_view = (view @ scale_matrix)[:3, :3] @ light
+    light_view: np.ndarray = (view @ scale_matrix)[:3, :3] @ light
     GL.glUniform3f(obj["light_loc"], *light_view)
     GL.glBindVertexArray(obj["vao"])
     GL.glDrawArrays(GL.GL_TRIANGLES, 0, obj["count"])
@@ -231,8 +233,8 @@ def update(dt: float) -> bool:
     if ui["auto_rotate"]:
         ui["angle"] = (ui["angle"] + 30.0 * dt) % 360.0
 
-    w = state.get("w", TEXTURE_WIDTH)
-    h = state.get("h", TEXTURE_HEIGHT)
+    w: int = state.get("w", TEXTURE_WIDTH)
+    h: int = state.get("h", TEXTURE_HEIGHT)
     proj: np.ndarray = common.perspective(
         fovy_deg=40.0, aspect=w / max(h, 1), near=1.0, far=100.0
     )
@@ -250,7 +252,7 @@ def update(dt: float) -> bool:
     GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, state["fbo"])
     GL.glViewport(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT)
     GL.glClearColor(1, 1, 1, 0)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glFrontFace(GL.GL_CW)
     scale: np.ndarray = common.scale_m(x=1, y=-1, z=1)
     _draw_obj(scale_matrix=scale, proj=proj_off, view=view)
@@ -274,7 +276,7 @@ def update(dt: float) -> bool:
     # Scene pass
     GL.glViewport(0, 0, w, h)
     GL.glClearColor(0, 0, 0, 0)
-    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+    GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)  # ty: ignore[unsupported-operator]
     GL.glFrontFace(GL.GL_CCW)
     _draw_obj(scale_matrix=np.eye(4, dtype=np.float32), proj=proj, view=view)
 

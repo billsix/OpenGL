@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from . import common
-from .common import GL
+from .common import GL, GLenum
 
 # The port's GLUS_SHADER_DIR: GLUS's shaders, verbatim, under their own names.
 GLUS_SHADER_DIR: Path = Path(__file__).resolve().parent / "glus_shaders"
@@ -34,7 +34,9 @@ def compile_glus_program(vert: str, frag: str) -> int:
     )
 
 
-def make_cubemap(size: int, fmt=GL.GL_RGBA32F, mipmap: bool = False) -> int:
+def make_cubemap(
+    size: int, fmt: GLenum = GL.GL_RGBA32F, mipmap: bool = False
+) -> int:
     """Allocate an empty float cubemap; ``mipmap`` selects trilinear sampling.
 
     GL_RGBA32F because, as GLUS notes, it is required to be colour-renderable
@@ -44,7 +46,7 @@ def make_cubemap(size: int, fmt=GL.GL_RGBA32F, mipmap: bool = False) -> int:
     GL.glBindTexture(GL.GL_TEXTURE_CUBE_MAP, tex)
     for face in range(6):
         GL.glTexImage2D(
-            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,  # ty: ignore[unsupported-operator]
             0,
             fmt,
             size,
@@ -106,7 +108,7 @@ def _render_cube_faces(prog: int, tex: int, size: int) -> None:
         GL.glFramebufferTexture2D(
             GL.GL_FRAMEBUFFER,
             GL.GL_COLOR_ATTACHMENT0,
-            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+            GL.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,  # ty: ignore[unsupported-operator]
             tex,
             0,
         )
