@@ -47,6 +47,8 @@ make shell            # shell at the repo root (C built, port installed)
 make run-c N=5        # run the C Example05 on your display
 make run   N=5        # run the Python demo 5 on your display
 make check            # import every Python demo module (no display)
+make type-check       # ty + annotate-every-binding checker (no display)
+make format           # ruff check --fix + ruff format the Python port
 ```
 
 The image bakes `cmake --build` from the copied source; `make shell` bind-mounts
@@ -179,7 +181,9 @@ packaging (`pyproject.toml`). It is a separate world from the C examples above:
   `ExampleNN/shader/`, not duplicated; the shared GLUS PBR/IBL shaders live in
   `python/src/mcnopper/glus_shaders/`, since GLUS is not committed here.
 - The C rules above (`FormatStyle: none`, "never reformat", cppcheck/clang-tidy)
-  are for the C examples. The Python subtree is formatted with ruff; keep Python
+  are for the C examples. The Python subtree is formatted with ruff (`make
+  format`) and type-checked with ty (`make type-check` = `ty check` +
+  `tools/check_local_annotations.py`, the annotate-every-binding gate); keep Python
   style changes inside `python/`.
 - New Python runtime deps still pass through the dependency-licence gate and are
   recorded in `THIRD-PARTY.md`.

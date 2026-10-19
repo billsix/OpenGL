@@ -203,6 +203,8 @@ make run-c N=5        # run the C Example05 on your display
 make run   N=5        # run the Python demo 5 on your display
 make shell            # shell at the repo root (both built; use `run-c <N>` for C)
 make list             # list the 52 Python demos
+make type-check       # ty + annotate-every-binding checker (no display)
+make format           # ruff check --fix + ruff format the port
 ```
 
 See [`python/README.md`](python/README.md) for details and running without a
