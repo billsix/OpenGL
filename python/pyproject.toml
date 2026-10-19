@@ -1,0 +1,54 @@
+[project]
+name = "mcnopper"
+version = "0.1.0"
+authors = [{name = "William Emerison Six", email = "billsix@gmail.com"}]
+description = "Python port of Norbert Nopper's OpenGL 4 examples (52 demos)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+
+dynamic = ["dependencies"]
+
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+    "Topic :: Education",
+]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# Bundle each demo's shaders (and any per-example textures). The large shared
+# media set (meshes/HDRs/sponza/glTF) is NOT bundled here: in this repo the demos
+# read it from the sibling Binaries/ folder via MCNOPPER_MEDIA (see README), so it
+# is not duplicated. The glus_shaders/ dir is matched explicitly since it is not
+# under example*/ (only the four shader-bearing demos — 13, 48, 49, 50 — are
+# still nested; the rest are flat example*.py modules with no co-located shaders).
+"mcnopper" = [
+    "example*/**/*.glsl",
+    "example*/**/*.comp",
+    "example*/**/*.tga",
+    "glus_shaders/*.glsl",
+]
+
+[project.scripts]
+mcnopper = "mcnopper.cli:main"
+
+# NOTE: no [tool.ruff*] tables here on purpose (removed 2026-07-30). Ruff
+# resolves the NEAREST config, so a table in this file silently overrides the
+# repo root's for the whole subtree (it had no line-length -> 88 instead of
+# the repo's 80, and re-added preview-only rules the root removed). The root
+# pyproject.toml governs all of ports/, including this tree.

@@ -188,6 +188,27 @@ All dependencies are automatically fetched and built:
 - **GLEW 2.2.0** - OpenGL Extension Wrangler
 - **OpenGL 3.2+** - System graphics library
 
+## Python port
+
+A Python port of all 52 examples lives under [`python/`](python/) (Python +
+PyOpenGL + glfw + Dear ImGui). It reuses this repository's own `Binaries/`
+assets rather than copying them.
+
+The repository ships **one container contract at the repo root** that builds and
+runs both the C examples and the Python port:
+
+```
+make image            # build the image: compiles the C examples + installs the port
+make run-c N=5        # run the C Example05 on your display
+make run   N=5        # run the Python demo 5 on your display
+make shell            # shell at the repo root (both built; use `run-c <N>` for C)
+make list             # list the 52 Python demos
+```
+
+See [`python/README.md`](python/README.md) for details and running without a
+container, and [`AGENTS.md`](AGENTS.md) for the container design (including why
+`run-c` forces X11). Dependency licenses are in [`THIRD-PARTY.md`](THIRD-PARTY.md).
+
 ## Examples
 
 All examples demonstrate various OpenGL 3.x and 4.x features with GLSL shaders.

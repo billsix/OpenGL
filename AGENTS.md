@@ -35,6 +35,40 @@ Dependencies are fetched at configure time (GLFW 3.4, GLEW 2.2.0, GLUS). GLUS
 is preferred from a sibling `../GLUS` checkout and falls back to the GitHub
 repository, so the multi-repo layout builds without edits.
 
+## Build and run in a container
+
+A top-level container contract (`Dockerfile`, `Makefile`, `entrypoint/`) builds
+**both** the C examples and the Python port (`python/`) in one Fedora + podman
+image, and runs either on your display:
+
+```
+make image            # build the image: compiles all C examples + installs the port
+make shell            # shell at the repo root (C built, port installed)
+make run-c N=5        # run the C Example05 on your display
+make run   N=5        # run the Python demo 5 on your display
+make check            # import every Python demo module (no display)
+```
+
+The image bakes `cmake --build` from the copied source; `make shell` bind-mounts
+the live repo over `/opengl` and the entrypoint rebuilds the C incrementally and
+re-installs the port against the mount. The C build tree lives at `/opt/ogl-build`
+(outside the mount) so the host's own `build/` cache cannot collide with it; CMake
+still writes the `ExampleNN` binaries into `Binaries/`. Example50 needs the Vulkan
+SDK (McNopper/EGL HDR) and is skipped when it is absent. The standalone `cmake`
+invocation above still works for a no-container build.
+
+`make run-c` forwards **X11 only** (not the Wayland env that `run` forwards): the C
+examples use GLUS + GLEW, which resolves GL through GLX, and GLFW 3.4 would otherwise
+pick its Wayland/EGL backend on a Wayland session, leaving GLEW unable to load any GL
+function (the window opens but draws nothing). Withholding `WAYLAND_DISPLAY` makes GLFW
+use X11 — XWayland on a Wayland host — where GLX works. The image carries **both** display
+backends (X11 and Wayland libs; GLFW is built with both). `make shell` forwards both, and
+provides a **`run-c <N>`** helper that launches a C example with `WAYLAND_DISPLAY` unset
+(→ X11), while a Python demo (`cd python && mcnopper <N>`) uses Wayland directly. The Python
+port uses PyOpenGL, which handles EGL, so `make run N=…` is the native-Wayland Python path.
+Only the GLEW-based C demos are pinned to X11, because GLEW cannot resolve GL on an
+EGL/Wayland context — a GLEW limitation, not something having Wayland in the image can undo.
+
 Layout of one example:
 
 | Path | Contents |
@@ -131,3 +165,51 @@ functions are exactly what the gate should catch.
 - **Language**: English only, always.
 - After any change, build clean, run the affected example, and re-run the
   analysis set. If rendered output changed, re-capture the screenshot.
+
+## Python port (`python/`)
+
+`python/` holds a Python port of all 52 examples (PyOpenGL + glfw + Dear ImGui),
+with its own container contract (`Dockerfile`, `Makefile`, `entrypoint/`) and
+packaging (`pyproject.toml`). It is a separate world from the C examples above:
+
+- **It reuses this repo's assets, never duplicates them.** The demos read
+  `Binaries/` via `MCNOPPER_MEDIA` (the Makefile sets it to `/opengl/Binaries`
+  inside the container). Do not add an asset copy under `python/`.
+- Per-example shaders are this repo's own C shaders, read from each C example's
+  `ExampleNN/shader/`, not duplicated; the shared GLUS PBR/IBL shaders live in
+  `python/src/mcnopper/glus_shaders/`, since GLUS is not committed here.
+- The C rules above (`FormatStyle: none`, "never reformat", cppcheck/clang-tidy)
+  are for the C examples. The Python subtree is formatted with ruff; keep Python
+  style changes inside `python/`.
+- New Python runtime deps still pass through the dependency-licence gate and are
+  recorded in `THIRD-PARTY.md`.
+
+### Cold-start knowledge for the port
+
+Durable knowledge about the port — the C→Python translation rules, the GL/imgui/GLFW
+traps, the Mesa + PyOpenGL failure modes, and the per-demo fidelity verdict against the
+C originals — lives in **`tasks/reference/python-port/`** (read `README.md` there first).
+Read the relevant doc before touching that part of the port. The invariants worth having
+in front of you:
+
+- **`import glfw` before `import imgui_bundle`** in any module that imports imgui (the
+  first GLFW loaded into the process wins; imgui-bundle ships an X11-only build). A module
+  that imports imgui directly carries `import glfw  # noqa: F401` above it.
+- **A demo's controls go in the menubar's Controls menu, never a floating window; F11 (and
+  View → Fullscreen) toggles fullscreen; Esc quits.** McNopper demos pass `imgui_panel=` to
+  `common.run_demo`.
+- **imgui-bundle's `GlfwRenderer` installs its own GLFW callbacks and does not chain** — the
+  port builds the renderer first, then installs callbacks that forward to it (so Esc and
+  demo keys fire), and **disables `GL_STENCIL_TEST` around imgui's draw** (the renderer does
+  not, so a stencil demo would otherwise hide the UI).
+- **Shaders are this repo's own C shaders**, read from `ExampleNN/shader/` by
+  `common.find_shader`, not copied (`c-to-python-rules.md` §6); parity work is Python-side.
+  Copies are kept only where they differ: Example13's edit, 48–50's version-lowered
+  background/fullscreen, and `glus_shaders/`.
+- **Assets resolve against this repo's `Binaries/`** via `common.find_media`
+  (`$MCNOPPER_MEDIA`, else a walk up to the nearest ancestor `Binaries/`); never duplicate
+  assets under `python/`. The `.hdr`/`.bin` assets are git-lfs — a fresh clone needs
+  `git lfs pull`.
+- **The container needs the Wayland client libraries** (`libwayland-client`,
+  `libwayland-cursor`, `libwayland-egl`, `libxkbcommon`), not just the `libX*` ones, or a
+  Wayland-session run dies with "Failed to load libwayland-cursor".

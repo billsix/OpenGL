@@ -269,3 +269,7 @@ _deps/
 
 # GLUS runtime shaders copied from the fetched GLUS repository at configure time
 GLUS/
+
+# imgui writes its layout file to the cwd of whatever demo runs
+imgui.ini
+**/imgui.ini

@@ -1,0 +1,8 @@
+PyOpenGL
+glfw
+imgui-bundle
+numpy
+# pygltflib + Pillow are needed by the glTF / PBR demos (examples 48-52):
+# pygltflib parses the .gltf scenes, Pillow decodes their PNG textures.
+pygltflib
+Pillow

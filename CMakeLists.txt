@@ -78,6 +78,18 @@ ENDIF()
 
 include_directories(${glfw_SOURCE_DIR}/include ${glew_SOURCE_DIR}/include)
 
+# GLUS aborts window creation when glewInit() returns anything but GLEW_OK, but
+# on an EGL/Wayland context GLEW cannot run its GLX display probe and returns
+# GLEW_ERROR_NO_GLX_DISPLAY (0x4) even though the GL entry points are resolved.
+# Relax that one check so examples run on Wayland. Applied to the fetched copy
+# through PATCH_COMMAND (same mechanism as the GLEW patch above); the string
+# replacement is idempotent, so it is safe to re-run on every configure.
+set(GLUS_PATCH_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/patch_glus.cmake)
+file(WRITE ${GLUS_PATCH_SCRIPT}
+"file(READ \"\${GLUS_WINDOW_GLFW}\" GLUS_WINDOW_CONTENT)\n"
+"string(REPLACE \"if (GLUS_OK != err)\" \"if (GLUS_OK != err && GLEW_ERROR_NO_GLX_DISPLAY != err)\" GLUS_WINDOW_CONTENT \"\${GLUS_WINDOW_CONTENT}\")\n"
+"file(WRITE \"\${GLUS_WINDOW_GLFW}\" \"\${GLUS_WINDOW_CONTENT}\")\n")
+
 # GLUS: prefer the sibling local checkout (multi-repo development layout), and
 # fall back to the published release when it is not present.
 if(EXISTS "${CMAKE_SOURCE_DIR}/../GLUS/CMakeLists.txt")
@@ -90,6 +102,7 @@ else()
         glus
         GIT_REPOSITORY https://github.com/McNopper/GLUS.git
         GIT_TAG        v1.1.4
+        PATCH_COMMAND ${CMAKE_COMMAND} -DGLUS_WINDOW_GLFW=<SOURCE_DIR>/src/glus_window_glfw.c -P ${GLUS_PATCH_SCRIPT}
     )
 endif()
 FetchContent_MakeAvailable(glus)

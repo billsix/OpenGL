@@ -77,3 +77,21 @@ any purpose, **provided the author is credited**.
   (https://sketchfab.com/3d-models/phoenix-bird-844ba0cf144a413ea92c779f18912042)
   by NORBERTO-3D (https://sketchfab.com/norberto3d) licensed under CC-BY-4.0
   (http://creativecommons.org/licenses/by/4.0/).
+
+## Python port dependencies (`python/`)
+
+The Python port under [`python/`](python/) is MIT-licensed (see
+[`python/LICENSE`](python/LICENSE)). At runtime it depends on these third-party
+Python packages, all under permissive, commercial-use-OK licenses:
+
+| Package | License |
+|---|---|
+| [PyOpenGL](https://pypi.org/project/PyOpenGL/) | BSD-3-Clause |
+| [glfw](https://pypi.org/project/glfw/) (Python bindings) | MIT |
+| [numpy](https://numpy.org/) | BSD-3-Clause |
+| [imgui-bundle](https://pypi.org/project/imgui-bundle/) (bundles Dear ImGui) | MIT |
+| [pygltflib](https://pypi.org/project/pygltflib/) | MIT |
+| [Pillow](https://python-pillow.org/) | MIT-CMU (HPND, permissive) |
+
+The port reuses this repository's own `Binaries/` assets and shaders; it adds no
+new bundled assets, so the model/GLUS attributions above cover its data too.

@@ -1,0 +1,14 @@
+# Keep the COPY . /opengl layer small and let the image's own build populate
+# fresh output dirs. The live repo is bind-mounted over /opengl at `make shell`
+# time, so nothing here affects development — only the baked image.
+.git
+build/
+build-*/
+Binaries/
+lib/
+screenshots/
+*.tar
+**/__pycache__/
+**/*.egg-info/
+python/build/
+python/dist/
